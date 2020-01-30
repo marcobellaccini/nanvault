@@ -1,0 +1,13 @@
+name: nanvault
+version: 0.1.0
+
+authors:
+  - your-name-here <your-email-here>
+
+targets:
+  nanvault:
+    main: src/nanvault.cr
+
+crystal: 0.32.1
+
+license: MIT
