@@ -6,7 +6,7 @@ module Nanvault
   class Encrypted
     # these initializations also prevent this:
     # https://github.com/crystal-lang/crystal/issues/5931
-    property header = "", body = ""
+    property header = "", body = "", bbody = Bytes.new 1
     property vault_info = Hash(String, String | Nil).new
 
     def initialize(ctext_lines : Array(String))
@@ -21,7 +21,7 @@ module Nanvault
         raise BadFile.new("Invalid input file")
     end
 
-    # parse file method
+    # parse method
     def parse()
       parse_header()
 
@@ -49,7 +49,15 @@ module Nanvault
 
     # parse body method
     private def parse_body()
+      get_bytes()
 
+    end
+
+    # get bytes method
+    private def get_bytes()
+      @bbody = @body.hexbytes
+      rescue ex: ArgumentError
+        raise BadFile.new("Invalid input file body")
     end
 
   end
