@@ -34,6 +34,39 @@ describe Nanvault do
                     "64393735663933666330366466393366376164306531313238393334633266646165"
         enc.body.should eq exp_body
       end
+
+      it "correctly parse ok header" do
+        head = "$ANSIBLE_VAULT;1.2;AES256;vault-id-label"
+        enc = Nanvault::Encrypted.new [head, "BODY1", "BODY2"]
+        enc.parse_header()
+        exp_vault_info = {"version" => "1.2", "alg" => "AES256", "label" => "vault-id-label"}
+        enc.vault_info.should eq exp_vault_info
+      end
+
+      it "correctly parse ok-nolabel header" do
+        head = "$ANSIBLE_VAULT;1.1;AES256"
+        enc = Nanvault::Encrypted.new [head, "BODY1", "BODY2"]
+        enc.parse_header()
+        exp_vault_info = {"version" => "1.1", "alg" => "AES256", "label" => nil}
+        enc.vault_info.should eq exp_vault_info
+      end
+
+      it "correctly handles incomplete header" do
+        head = "$ANSIBLE_VAULT;1.1"
+        enc = Nanvault::Encrypted.new [head, "BODY1", "BODY2"]
+        expect_raises(Nanvault::BadFile, "Invalid input file: bad header") do
+          enc.parse_header()
+        end
+      end
+
+      it "correctly handles unsupported header" do
+        head = "FOOFILEHEAD"
+        enc = Nanvault::Encrypted.new [head, "BODY1", "BODY2"]
+        expect_raises(Nanvault::BadFile, "Invalid input file: bad header") do
+          enc.parse_header()
+        end
+      end
+
     end
   end
 
