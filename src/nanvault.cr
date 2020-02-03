@@ -2,8 +2,6 @@
 module Nanvault
   VERSION = "0.1.0"
 
-  # TODO: Put your code here
-
   # TODO: Write documentation
   class Encrypted
     # these initializations also prevent this:
@@ -19,7 +17,7 @@ module Nanvault
 
       # rescue for bad files
       rescue ex: IndexError
-        raise BadFile.new("Bad input file")
+        raise BadFile.new("Invalid input file")
     end
 
   end
