@@ -34,11 +34,12 @@ describe Nanvault do
                     "64393735663933666330366466393366376164306531313238393334633266646165"
         enc.body.should eq exp_body
       end
-
+    end
+    describe "#parse" do
       it "correctly parse ok header" do
         head = "$ANSIBLE_VAULT;1.2;AES256;vault-id-label"
         enc = Nanvault::Encrypted.new [head, "BODY1", "BODY2"]
-        enc.parse_header()
+        enc.parse
         exp_vault_info = {"version" => "1.2", "alg" => "AES256", "label" => "vault-id-label"}
         enc.vault_info.should eq exp_vault_info
       end
@@ -46,7 +47,7 @@ describe Nanvault do
       it "correctly parse ok-nolabel header" do
         head = "$ANSIBLE_VAULT;1.1;AES256"
         enc = Nanvault::Encrypted.new [head, "BODY1", "BODY2"]
-        enc.parse_header()
+        enc.parse
         exp_vault_info = {"version" => "1.1", "alg" => "AES256", "label" => nil}
         enc.vault_info.should eq exp_vault_info
       end
@@ -55,7 +56,7 @@ describe Nanvault do
         head = "$ANSIBLE_VAULT;1.1"
         enc = Nanvault::Encrypted.new [head, "BODY1", "BODY2"]
         expect_raises(Nanvault::BadFile, "Invalid input file: bad header") do
-          enc.parse_header()
+          enc.parse
         end
       end
 
@@ -63,10 +64,17 @@ describe Nanvault do
         head = "FOOFILEHEAD"
         enc = Nanvault::Encrypted.new [head, "BODY1", "BODY2"]
         expect_raises(Nanvault::BadFile, "Invalid input file: bad header") do
-          enc.parse_header()
+          enc.parse
         end
       end
 
+      it "correctly handles unsupported version" do
+        head = "$ANSIBLE_VAULT;1.0;AES"
+        enc = Nanvault::Encrypted.new [head, "BODY1", "BODY2"]
+        expect_raises(Nanvault::BadFile, "Sorry: file format version 1.0 is not supported") do
+          enc.parse
+        end
+      end
     end
   end
 

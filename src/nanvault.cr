@@ -21,7 +21,21 @@ module Nanvault
         raise BadFile.new("Invalid input file")
     end
 
-    def parse_header()
+    # parse file method
+    def parse()
+      parse_header()
+
+      case @vault_info["version"]
+      when "1.1","1.2"
+        parse_body()
+      else
+        raise BadFile.new("Sorry: file format version #{@vault_info["version"]} is not supported")
+      end
+
+    end
+
+    # parse header method
+    private def parse_header()
       header_re = /^\$ANSIBLE_VAULT;(?<version>[^;\n\s]+);(?<alg>[^;\n\s]+);?(?<label>[^;\n\s]+)?$/
       match = header_re.match(@header)
 
@@ -30,6 +44,11 @@ module Nanvault
       end
       
       @vault_info = match.named_captures
+
+    end
+
+    # parse body method
+    private def parse_body()
 
     end
 
