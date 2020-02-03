@@ -13,7 +13,9 @@ describe Nanvault do
               "6466666165383365640a646365656164633362346630396335396365313231303238643039303937" \
               "64393735663933666330366466393366376164306531313238393334633266646165"
 
-    body_ok_bytes = body_ok.hexbytes
+    body_ok_bytes = body_ok.hexbytes.to_a
+
+    body_ok_salt = (body_ok_bytes.take_while { |x| x != 0x0a_u8})
 
     describe "#initialize" do
       it "correctly loads header and body" do
@@ -90,6 +92,47 @@ describe Nanvault do
 
       it "correctly handles non-hex body" do
         enc = Nanvault::Encrypted.new [header_ok, "11ZZ11"]
+        expect_raises(Nanvault::BadFile, "Invalid encoding in input file body") do
+          enc.parse
+        end
+      end
+
+      it "correctly parse ok salt" do
+        enc = Nanvault::Encrypted.new [header_ok, body_ok]
+        enc.parse
+        enc.bbody.should eq body_ok_bytes
+      end
+
+      it "correctly handles short body - no ctext" do
+        enc = Nanvault::Encrypted.new [header_ok, "110a11"]
+        expect_raises(Nanvault::BadFile, "Invalid input file body") do
+          enc.parse
+        end
+      end
+
+      it "correctly handles short body - no hmac" do
+        enc = Nanvault::Encrypted.new [header_ok, "11"]
+        expect_raises(Nanvault::BadFile, "Invalid input file body") do
+          enc.parse
+        end
+      end
+
+      it "correctly handles short body - empty salt" do
+        enc = Nanvault::Encrypted.new [header_ok, ""]
+        expect_raises(Nanvault::BadFile, "Invalid input file body") do
+          enc.parse
+        end
+      end
+
+      it "correctly handles short body - empty hmac" do
+        enc = Nanvault::Encrypted.new [header_ok, "110a0a"]
+        expect_raises(Nanvault::BadFile, "Invalid input file body") do
+          enc.parse
+        end
+      end
+
+      it "correctly handles short body - all empty" do
+        enc = Nanvault::Encrypted.new [header_ok, "0a0a"]
         expect_raises(Nanvault::BadFile, "Invalid input file body") do
           enc.parse
         end

@@ -6,7 +6,11 @@ module Nanvault
   class Encrypted
     # these initializations also prevent this:
     # https://github.com/crystal-lang/crystal/issues/5931
-    property header = "", body = "", bbody = Bytes.new 1
+    property header = "", body = ""
+    property bbody = Array(UInt8).new
+    property salt = Array(UInt8).new
+    property hmac = Array(UInt8).new
+    property ctext = Array(UInt8).new
     property vault_info = Hash(String, String | Nil).new
 
     def initialize(ctext_lines : Array(String))
@@ -51,13 +55,28 @@ module Nanvault
     private def parse_body()
       get_bytes()
 
+      @salt = (@bbody.take_while { |x| x != 0x0a_u8})
+
+      rem_bbody = @bbody[@salt.size+1..-1]
+
+      @hmac = (rem_bbody.take_while { |x| x != 0x0a_u8})
+
+      @ctext = rem_bbody[@hmac.size+1..-1]
+
+      if @salt.size == 0 || @hmac.size == 0 || @ctext.size == 0
+        raise BadFile.new("Invalid input file body")
+      end
+
+    rescue ex: IndexError
+      raise BadFile.new("Invalid input file body")
+
     end
 
     # get bytes method
     private def get_bytes()
-      @bbody = @body.hexbytes
+      @bbody = @body.hexbytes.to_a
       rescue ex: ArgumentError
-        raise BadFile.new("Invalid input file body")
+        raise BadFile.new("Invalid encoding in input file body")
     end
 
   end
