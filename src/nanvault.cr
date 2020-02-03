@@ -6,11 +6,25 @@ module Nanvault
 
   # TODO: Write documentation
   class Encrypted
-    property header : String, body : String
+    # these initializations also prevent this:
+    # https://github.com/crystal-lang/crystal/issues/5931
+    property header = "", body = ""
 
-    def initialize(@ctext_lines : Array(String))
+    def initialize(ctext_lines : Array(String))
       @header = ctext_lines[0]
-      @body = ctext_lines[1..-1].join()
+      # this also handles the header-only file case
+      if ctext_lines[1]
+        @body = ctext_lines[1..-1].join()
+      end
+
+      # rescue for bad files
+      rescue ex: IndexError
+        raise BadFile.new("Bad input file")
     end
+
+  end
+
+  # Exception type for bad files
+  class BadFile < Exception
   end
 end

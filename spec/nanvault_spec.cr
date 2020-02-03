@@ -10,6 +10,17 @@ describe Nanvault do
         enc.header.should eq("HEADER")
         enc.body.should eq("BODY1BODY2")
       end
+
+      it "correctly handles empty array" do
+        expect_raises(Nanvault::BadFile, "Bad input file") do
+          enc = Nanvault::Encrypted.new Array(String).new
+        end
+      end
+      it "correctly handles header-only file" do
+        expect_raises(Nanvault::BadFile, "Bad input file") do
+          enc = Nanvault::Encrypted.new ["HEADER"]
+        end
+      end
     end
   end
 
