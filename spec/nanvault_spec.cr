@@ -1,7 +1,7 @@
 require "./spec_helper"
 
 describe Nanvault do
-  # TODO: Write tests
+  # Nanvault tests
 
   describe Nanvault::Encrypted do
 
@@ -166,6 +166,39 @@ describe Nanvault do
       end
 
     end
+  end
+
+  describe Nanvault::Crypto do
+
+    salt = [52_u8, 57_u8, 52_u8, 101_u8, 56_u8, 98_u8, 50_u8, 56_u8, 49_u8,
+            49_u8, 56_u8, 98_u8, 55_u8, 98_u8, 101_u8, 50_u8, 48_u8, 98_u8, 54_u8,
+            57_u8, 102_u8, 54_u8, 57_u8, 97_u8, 53_u8, 57_u8, 54_u8, 100_u8, 50_u8,
+            56_u8, 52_u8, 56_u8, 56_u8, 56_u8, 49_u8, 48_u8, 53_u8,
+            102_u8, 99_u8, 49_u8, 101_u8, 100_u8, 53_u8, 54_u8, 98_u8, 49_u8,
+            54_u8, 50_u8, 97_u8, 97_u8, 51_u8, 54_u8, 98_u8, 55_u8, 57_u8,
+            56_u8, 48_u8, 57_u8, 48_u8, 54_u8, 48_u8, 56_u8, 51_u8, 50_u8]
+
+    password = "foo"
+
+    exp_cipher_key = [78, 116, 215, 252, 194, 36, 178, 70, 82, 251, 119, 224, 218,
+                      116, 83, 153, 69, 169, 197, 227, 207, 51, 20, 39, 194, 230,
+                      183, 145, 74, 110, 205, 39]
+    
+    exp_hmac_key = [238, 131, 245, 97, 171, 142, 161, 134, 156, 85, 239, 81, 162,
+                    17, 4, 52, 214, 103, 81, 58, 45, 156, 186, 98, 140, 179, 91,
+                    35, 115, 63, 43, 66]
+
+    exp_cipher_iv = [57, 38, 0, 68, 121, 201, 134, 53, 117, 66, 217, 173, 180, 21, 117, 76]
+
+    describe "#get_keys_iv" do
+      it "correctly get keys and iv" do
+        cipher_key, hmac_key, cipher_iv = Nanvault::Crypto.get_keys_iv(salt, password)
+        cipher_key.should eq exp_cipher_key
+        hmac_key.should eq exp_hmac_key
+        cipher_iv.should eq exp_cipher_iv
+      end
+    end
+
   end
 
 end

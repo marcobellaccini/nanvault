@@ -1,8 +1,10 @@
+require "openssl"
+
 # TODO: Write documentation for `Nanvault`
 module Nanvault
   VERSION = "0.1.0"
 
-  # TODO: Write documentation
+  # Encrypted file class
   class Encrypted
     # these initializations also prevent this:
     # https://github.com/crystal-lang/crystal/issues/5931
@@ -77,6 +79,27 @@ module Nanvault
       @bbody = @body.hexbytes.to_a
       rescue ex: ArgumentError
         raise BadFile.new("Invalid encoding in input file body")
+    end
+
+    # TODO: check HMAC!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+  end
+
+  # Crypto class
+  class Crypto
+    PBKDF2_ITERATIONS = 10000
+    PBKDF2_ALG = OpenSSL::Algorithm::SHA256
+    PBKDF2_KEY_SIZE = 80
+
+    # class method to get cipher key, HMAC key and cipher IV
+    def self.get_keys_iv(salt, password)
+      key = OpenSSL::PKCS5.pbkdf2_hmac(Slice.new(password.bytes.to_unsafe, password.bytes.size),
+                                        Slice.new(salt.to_unsafe, salt.size), PBKDF2_ITERATIONS, PBKDF2_ALG, PBKDF2_KEY_SIZE).to_a
+      cipher_key = key[0..31]
+      hmac_key = key[32..63]
+      cipher_iv = key[64..-1]
+      return {cipher_key, hmac_key, cipher_iv}
     end
 
   end
