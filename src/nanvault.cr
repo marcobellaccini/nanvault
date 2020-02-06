@@ -9,10 +9,10 @@ module Nanvault
     # these initializations also prevent this:
     # https://github.com/crystal-lang/crystal/issues/5931
     property header = "", body = ""
-    property bbody = Array(UInt8).new
-    property salt = Array(UInt8).new
-    property hmac = Array(UInt8).new
-    property ctext = Array(UInt8).new
+    property bbody = Slice(UInt8).new 1
+    property salt = Slice(UInt8).new 1
+    property hmac = Slice(UInt8).new 1
+    property ctext = Slice(UInt8).new 1
     property vault_info = Hash(String, String | Nil).new
 
     def initialize(ctext_lines : Array(String))
@@ -57,13 +57,25 @@ module Nanvault
     private def parse_body()
       get_bytes()
 
-      @salt = (@bbody.take_while { |x| x != 0x0a_u8})
+      salt_end_idx = @bbody.index { |x| x == 0x0a_u8}
 
-      rem_bbody = @bbody[@salt.size+1..-1]
+      if ! salt_end_idx
+        raise BadFile.new("Invalid input file body")
+      end
 
-      @hmac = (rem_bbody.take_while { |x| x != 0x0a_u8})
+      @salt = @bbody[0..(salt_end_idx - 1)]
 
-      @ctext = rem_bbody[@hmac.size+1..-1]
+      rem_bbody = @bbody + @salt.size + 1
+
+      hmac_end_idx = rem_bbody.index { |x| x == 0x0a_u8}
+
+      if ! hmac_end_idx
+        raise BadFile.new("Invalid input file body")
+      end
+
+      @hmac = rem_bbody[0..(hmac_end_idx - 1)]
+
+      @ctext = rem_bbody + @hmac.size + 1
 
       if @salt.size == 0 || @hmac.size == 0 || @ctext.size == 0
         raise BadFile.new("Invalid input file body")
@@ -76,7 +88,7 @@ module Nanvault
 
     # get bytes method
     private def get_bytes()
-      @bbody = @body.hexbytes.to_a
+      @bbody = @body.hexbytes
       rescue ex: ArgumentError
         raise BadFile.new("Invalid encoding in input file body")
     end
@@ -91,15 +103,32 @@ module Nanvault
     PBKDF2_ITERATIONS = 10000
     PBKDF2_ALG = OpenSSL::Algorithm::SHA256
     PBKDF2_KEY_SIZE = 80
+    CIPHER_ALG_DEFAULT = "aes-256-ctr"
 
     # class method to get cipher key, HMAC key and cipher IV
     def self.get_keys_iv(salt, password)
-      key = OpenSSL::PKCS5.pbkdf2_hmac(Slice.new(password.bytes.to_unsafe, password.bytes.size),
-                                        Slice.new(salt.to_unsafe, salt.size), PBKDF2_ITERATIONS, PBKDF2_ALG, PBKDF2_KEY_SIZE).to_a
+      key = OpenSSL::PKCS5.pbkdf2_hmac(password, salt, PBKDF2_ITERATIONS, PBKDF2_ALG, PBKDF2_KEY_SIZE)
       cipher_key = key[0..31]
       hmac_key = key[32..63]
       cipher_iv = key[64..-1]
       return {cipher_key, hmac_key, cipher_iv}
+    end
+
+    # class method to decrypt ciphertext
+    def self.decrypt(cipher_iv, cipher_key, ciphertext, algorithm = CIPHER_ALG_DEFAULT)
+      cipher = OpenSSL::Cipher.new(algorithm)
+      cipher.decrypt
+      cipher.iv = cipher_iv
+      cipher.key = cipher_key
+      ptext_start = cipher.update(ciphertext)
+      ptext_end = cipher.final
+
+      # concatenate slices
+      ret_slice = Slice(UInt8).new(ptext_start.size + ptext_end.size)
+      ptext_start.copy_to ret_slice
+      ptext_end.copy_to(ret_slice + ptext_start.size)
+
+      return ret_slice
     end
 
   end
