@@ -63,25 +63,48 @@ module Nanvault
         raise BadFile.new("Invalid input file body")
       end
 
-      @salt = @bbody[0..(salt_end_idx - 1)]
+      # unhexlify again (revert nested hexlify)
+      salt_hex_bytes = @bbody[0..(salt_end_idx - 1)]
 
-      rem_bbody = @bbody + @salt.size + 1
+      salt_hex_arr = salt_hex_bytes.to_a
 
-      hmac_end_idx = rem_bbody.index { |x| x == 0x0a_u8}
+      salt_hex_arr_chr = salt_hex_arr.map { |x| x.as(UInt8).chr }
+
+      @salt = salt_hex_arr_chr.join.hexbytes
+
+      rem_bbody = @bbody + salt_hex_bytes.size + 1
+
+      hmac_end_idx = rem_bbody.index { |x| x == 0x0a_u8 }
 
       if ! hmac_end_idx
         raise BadFile.new("Invalid input file body")
       end
 
-      @hmac = rem_bbody[0..(hmac_end_idx - 1)]
+      # unhexlify again (revert nested hexlify)
+      hmac_hex_bytes = rem_bbody[0..(hmac_end_idx - 1)]
 
-      @ctext = rem_bbody + @hmac.size + 1
+      hmac_hex_arr = hmac_hex_bytes.to_a
+
+      hmac_hex_arr_chr = hmac_hex_arr.map { |x| x.as(UInt8).chr }
+
+      @hmac = hmac_hex_arr_chr.join.hexbytes
+
+      # unhexlify again (revert nested hexlify)
+      ctext_hex_bytes = rem_bbody + hmac_hex_bytes.size + 1
+
+      ctext_hex_arr = ctext_hex_bytes.to_a
+
+      ctext_hex_arr_chr = ctext_hex_arr.map { |x| x.as(UInt8).chr }
+
+      @ctext = ctext_hex_arr_chr.join.hexbytes
 
       if @salt.size == 0 || @hmac.size == 0 || @ctext.size == 0
         raise BadFile.new("Invalid input file body")
       end
 
     rescue ex: IndexError
+      raise BadFile.new("Invalid input file body")
+    rescue ex: ArgumentError
       raise BadFile.new("Invalid input file body")
 
     end
@@ -127,6 +150,10 @@ module Nanvault
       ret_slice = Slice(UInt8).new(ptext_start.size + ptext_end.size)
       ptext_start.copy_to ret_slice
       ptext_end.copy_to(ret_slice + ptext_start.size)
+
+      # remove padding
+      padbytes = ret_slice[-1]
+      ret_slice = ret_slice[0..-1-padbytes]
 
       return ret_slice
     end
