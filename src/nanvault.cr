@@ -1,4 +1,5 @@
 require "openssl"
+require "openssl/hmac"
 
 # TODO: Write documentation for `Nanvault`
 module Nanvault
@@ -8,11 +9,12 @@ module Nanvault
   class Encrypted
     # these initializations also prevent this:
     # https://github.com/crystal-lang/crystal/issues/5931
-    property header = "", body = ""
+    property header = "", body = "", password = ""
     property bbody = Slice(UInt8).new 1
     property salt = Slice(UInt8).new 1
     property hmac = Slice(UInt8).new 1
     property ctext = Slice(UInt8).new 1
+    property ptext = Slice(UInt8).new 1
     property vault_info = Hash(String, String | Nil).new
 
     def initialize(ctext_lines : Array(String))
@@ -24,7 +26,7 @@ module Nanvault
 
       # rescue for bad files
       rescue ex: IndexError
-        raise BadFile.new("Invalid input file")
+        raise BadData.new("Invalid input file")
     end
 
     # parse method
@@ -35,7 +37,7 @@ module Nanvault
       when "1.1","1.2"
         parse_body()
       else
-        raise BadFile.new("Sorry: file format version #{@vault_info["version"]} is not supported")
+        raise BadData.new("Sorry: file format version #{@vault_info["version"]} is not supported")
       end
 
     end
@@ -46,7 +48,7 @@ module Nanvault
       match = header_re.match(@header)
 
       if ! match
-        raise BadFile.new("Invalid input file: bad header")
+        raise BadData.new("Invalid input file: bad header")
       end
       
       @vault_info = match.named_captures
@@ -60,64 +62,54 @@ module Nanvault
       salt_end_idx = @bbody.index { |x| x == 0x0a_u8}
 
       if ! salt_end_idx
-        raise BadFile.new("Invalid input file body")
+        raise BadData.new("Invalid input file body")
       end
 
       # unhexlify again (revert nested hexlify)
       salt_hex_bytes = @bbody[0..(salt_end_idx - 1)]
-
-      salt_hex_arr = salt_hex_bytes.to_a
-
-      salt_hex_arr_chr = salt_hex_arr.map { |x| x.as(UInt8).chr }
-
-      @salt = salt_hex_arr_chr.join.hexbytes
+      @salt = VarUtil.unhexlify(salt_hex_bytes)
 
       rem_bbody = @bbody + salt_hex_bytes.size + 1
 
       hmac_end_idx = rem_bbody.index { |x| x == 0x0a_u8 }
 
       if ! hmac_end_idx
-        raise BadFile.new("Invalid input file body")
+        raise BadData.new("Invalid input file body")
       end
 
       # unhexlify again (revert nested hexlify)
       hmac_hex_bytes = rem_bbody[0..(hmac_end_idx - 1)]
-
-      hmac_hex_arr = hmac_hex_bytes.to_a
-
-      hmac_hex_arr_chr = hmac_hex_arr.map { |x| x.as(UInt8).chr }
-
-      @hmac = hmac_hex_arr_chr.join.hexbytes
+      @hmac = VarUtil.unhexlify(hmac_hex_bytes)
 
       # unhexlify again (revert nested hexlify)
       ctext_hex_bytes = rem_bbody + hmac_hex_bytes.size + 1
-
-      ctext_hex_arr = ctext_hex_bytes.to_a
-
-      ctext_hex_arr_chr = ctext_hex_arr.map { |x| x.as(UInt8).chr }
-
-      @ctext = ctext_hex_arr_chr.join.hexbytes
+      @ctext = VarUtil.unhexlify(ctext_hex_bytes)
 
       if @salt.size == 0 || @hmac.size == 0 || @ctext.size == 0
-        raise BadFile.new("Invalid input file body")
+        raise BadData.new("Invalid input file body")
       end
 
     rescue ex: IndexError
-      raise BadFile.new("Invalid input file body")
+      raise BadData.new("Invalid input file body")
     rescue ex: ArgumentError
-      raise BadFile.new("Invalid input file body")
+      raise BadData.new("Invalid input file body")
 
+    end
+
+    # decrypt method
+    def decrypt()
+      cipher_key, hmac_key, cipher_iv = Crypto.get_keys_iv(@salt, @password.to_slice)
+      Crypto.check_hmac(@ctext, hmac_key, @hmac)
+      @ptext = Crypto.decrypt(cipher_iv, cipher_key, @ctext)
     end
 
     # get bytes method
+    # this performs an implicit "unhexlify-equivalent"
     private def get_bytes()
       @bbody = @body.hexbytes
       rescue ex: ArgumentError
-        raise BadFile.new("Invalid encoding in input file body")
+        raise BadData.new("Invalid encoding in input file body")
     end
-
-    # TODO: check HMAC!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 
   end
 
@@ -125,6 +117,7 @@ module Nanvault
   class Crypto
     PBKDF2_ITERATIONS = 10000
     PBKDF2_ALG = OpenSSL::Algorithm::SHA256
+    HMAC_ALG = OpenSSL::Algorithm::SHA256
     PBKDF2_KEY_SIZE = 80
     CIPHER_ALG_DEFAULT = "aes-256-ctr"
 
@@ -135,6 +128,15 @@ module Nanvault
       hmac_key = key[32..63]
       cipher_iv = key[64..-1]
       return {cipher_key, hmac_key, cipher_iv}
+    end
+
+    # class method to check HMAC
+    def self.check_hmac(data, key, exp_hmac)
+      hmac = OpenSSL::HMAC.digest(HMAC_ALG, key, data)
+      if hmac != exp_hmac
+        raise BadData.new("Bad HMAC: wrong password or corrupted data")
+      end
+      return true
     end
 
     # class method to decrypt ciphertext
@@ -160,7 +162,21 @@ module Nanvault
 
   end
 
+  # VarUtil Class
+  class VarUtil
+    # class method to perform unhexlify
+    # https://docs.python.org/3.8/library/binascii.html#binascii.unhexlify
+    def self.unhexlify(hinsl)
+      hinsl_arr = hinsl.to_a
+      hinsl_arr_chr = hinsl_arr.map { |x| x.as(UInt8).chr }
+      return hinsl_arr_chr.join.hexbytes
+
+      rescue ArgumentError
+        raise BadData.new("Bad data: invalid hex")
+    end
+  end
+
   # Exception type for bad files
-  class BadFile < Exception
+  class BadData < Exception
   end
 end
