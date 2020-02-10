@@ -5,7 +5,7 @@ require "openssl/hmac"
 module Nanvault
   VERSION = "0.1.0"
 
-  # Encrypted file class
+  # Encrypted data class
   class Encrypted
     # these initializations also prevent this:
     # https://github.com/crystal-lang/crystal/issues/5931
@@ -17,16 +17,17 @@ module Nanvault
     property ptext = Slice(UInt8).new 1
     property vault_info = Hash(String, String | Nil).new
 
-    def initialize(ctext_lines : Array(String))
+    def initialize(ctext_str : String)
+      ctext_lines = ctext_str.split("\n")
       @header = ctext_lines[0]
-      # this also handles the header-only file case
+      # this also handles the header-only data case
       if ctext_lines[1]
         @body = ctext_lines[1..-1].join()
       end
 
-      # rescue for bad files
+      # rescue for bad data
       rescue ex: IndexError
-        raise BadData.new("Invalid input file")
+        raise BadData.new("Invalid input data")
     end
 
     # parse method
@@ -37,7 +38,7 @@ module Nanvault
       when "1.1","1.2"
         parse_body()
       else
-        raise BadData.new("Sorry: file format version #{@vault_info["version"]} is not supported")
+        raise BadData.new("Sorry: format version #{@vault_info["version"]} is not supported")
       end
 
     end
@@ -48,7 +49,7 @@ module Nanvault
       match = header_re.match(@header)
 
       if ! match
-        raise BadData.new("Invalid input file: bad header")
+        raise BadData.new("Invalid input data: bad header")
       end
       
       @vault_info = match.named_captures
@@ -62,7 +63,7 @@ module Nanvault
       salt_end_idx = @bbody.index { |x| x == 0x0a_u8}
 
       if ! salt_end_idx
-        raise BadData.new("Invalid input file body")
+        raise BadData.new("Invalid input data body")
       end
 
       # unhexlify again (revert nested hexlify)
@@ -74,7 +75,7 @@ module Nanvault
       hmac_end_idx = rem_bbody.index { |x| x == 0x0a_u8 }
 
       if ! hmac_end_idx
-        raise BadData.new("Invalid input file body")
+        raise BadData.new("Invalid input data body")
       end
 
       # unhexlify again (revert nested hexlify)
@@ -86,13 +87,13 @@ module Nanvault
       @ctext = VarUtil.unhexlify(ctext_hex_bytes)
 
       if @salt.size == 0 || @hmac.size == 0 || @ctext.size == 0
-        raise BadData.new("Invalid input file body")
+        raise BadData.new("Invalid input data body")
       end
 
     rescue ex: IndexError
-      raise BadData.new("Invalid input file body")
+      raise BadData.new("Invalid input data body")
     rescue ex: ArgumentError
-      raise BadData.new("Invalid input file body")
+      raise BadData.new("Invalid input data body")
 
     end
 
@@ -113,7 +114,65 @@ module Nanvault
     private def get_bytes()
       @bbody = @body.hexbytes
       rescue ex: ArgumentError
-        raise BadData.new("Invalid encoding in input file body")
+        raise BadData.new("Invalid encoding in input data body")
+    end
+
+  end
+
+  # Plaintext data class
+  class Plaintext
+    # salt length
+    SALT_LEN = 32
+    HMAC_ALG = OpenSSL::Algorithm::SHA256
+    # these initializations also prevent this:
+    # https://github.com/crystal-lang/crystal/issues/5931
+    property password = "", label = ""
+    property salt = Slice(UInt8).new 1
+    property ptext = Slice(UInt8).new 1
+    property ctext = Slice(UInt8).new 1
+    property hmac = Slice(UInt8).new 1
+
+    def initialize(ptext_str : String)
+      @ptext = ptext_str.to_slice
+    end
+
+    # encrypt method - also generates safe salt
+    def encrypt()
+      # generate random salt
+      @salt = Random::Secure.random_bytes SALT_LEN
+      # call internal, unsafe method
+      encrypt_int()
+    end
+
+    # internal encrypt method - does NOT generate salt
+    # NOTE: YOU SHOULD NOT USE THIS UNLESS YOU KNOW WHAT YOU'RE DOING
+    def encrypt_int()
+      if @password == ""
+        raise ArgumentError.new("Cannot encrypt with empty password")
+      end
+      # generate keys
+      cipher_key, hmac_key, cipher_iv = Crypto.get_keys_iv(@salt, @password.to_slice)
+      # encrypt data
+      @ctext = Crypto.encrypt(cipher_iv, cipher_key, @ptext)
+      # get HMAC
+      @hmac = OpenSSL::HMAC.digest(HMAC_ALG, hmac_key, @ctext)
+    end
+
+    # encrypted string method
+    def encrypted_str()
+      if @label == ""
+        header = "$ANSIBLE_VAULT;1.1;AES256\n"
+      else
+        header = "$ANSIBLE_VAULT;1.2;AES256;" + @label + "\n"
+      end
+
+      body = (@salt.hexstring + "\n" + @hmac.hexstring + "\n" + @ctext.hexstring).to_slice.hexstring
+
+      # enforce 80 chars limit
+      body_lines = body.scan(/.{1,80}/m)
+      body_limited = body_lines.join("\n")
+
+      return header + body_limited
     end
 
   end
@@ -165,6 +224,24 @@ module Nanvault
       return ret_slice
     end
 
+    # class method to encrypt plaintext
+    def self.encrypt(cipher_iv, cipher_key, plaintext, algorithm = CIPHER_ALG_DEFAULT)
+      cipher = OpenSSL::Cipher.new(algorithm)
+      cipher.encrypt
+      cipher.iv = cipher_iv
+      cipher.key = cipher_key
+      cipher.padding = true
+      ctext_start = cipher.update(plaintext)
+      ctext_end = cipher.final
+
+      # concatenate slices
+      ret_slice = Slice(UInt8).new(ctext_start.size + ctext_end.size)
+      ctext_start.copy_to ret_slice
+      ctext_end.copy_to(ret_slice + ctext_start.size)
+
+      return ret_slice
+    end
+
   end
 
   # VarUtil Class
@@ -181,7 +258,7 @@ module Nanvault
     end
   end
 
-  # Exception type for bad files
+  # Exception type for bad data
   class BadData < Exception
   end
 end

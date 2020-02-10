@@ -5,13 +5,15 @@ describe Nanvault do
 
   describe Nanvault::Encrypted do
 
-    header_ok = "$ANSIBLE_VAULT;1.1;AES256"
+    header_ok = "$ANSIBLE_VAULT;1.1;AES256\n"
 
-    body_ok = "34393465386232383131386237626532306236396636396135393664323834383838313035666331" \
-              "6564353662313632616133366237393830393036303833320a356631363739393737316664313765" \
-              "63336362376661303365386566363361306630323639326161313166613564363561306133643662" \
-              "6466666165383365640a646365656164633362346630396335396365313231303238643039303937" \
+    body_ok = "34393465386232383131386237626532306236396636396135393664323834383838313035666331\n" \
+              "6564353662313632616133366237393830393036303833320a356631363739393737316664313765\n" \
+              "63336362376661303365386566363361306630323639326161313166613564363561306133643662\n" \
+              "6466666165383365640a646365656164633362346630396335396365313231303238643039303937\n" \
               "64393735663933666330366466393366376164306531313238393334633266646165"
+    
+    cdata_ok = header_ok + body_ok
 
     body_no_ctext = "34393465386232383131386237626532306236396636396135393664323834383838313035666331" \
               "6564353662313632616133366237393830393036303833320a356631363739393737316664313765" \
@@ -51,86 +53,93 @@ describe Nanvault do
 
     describe "#initialize" do
       it "correctly loads header and body" do
-        enc = Nanvault::Encrypted.new ["HEADER", "BODY1", "BODY2"]
+        enc = Nanvault::Encrypted.new "HEADER\nBODY1\nBODY2"
         enc.header.should eq("HEADER")
         enc.body.should eq("BODY1BODY2")
       end
 
-      it "correctly handles empty array" do
-        expect_raises(Nanvault::BadData, "Invalid input file") do
-          enc = Nanvault::Encrypted.new Array(String).new
+      it "correctly handles empty string" do
+        expect_raises(Nanvault::BadData, "Invalid input data") do
+          enc = Nanvault::Encrypted.new ""
         end
       end
 
-      it "correctly handles header-only file" do
-        expect_raises(Nanvault::BadData, "Invalid input file") do
-          enc = Nanvault::Encrypted.new ["HEADER"]
+      it "correctly handles header-only data" do
+        expect_raises(Nanvault::BadData, "Invalid input data") do
+          enc = Nanvault::Encrypted.new "HEADER"
         end
       end
 
-      it "load real file" do
-        enc_str = File.read_lines("spec/testfiles/test1.enc")
+      it "load real data" do
+        enc_str = File.read("spec/testfiles/test1.enc")
         enc = Nanvault::Encrypted.new enc_str
-        enc.header.should eq(header_ok)
-        enc.body.should eq body_ok
+        enc.header.should eq(header_ok.rstrip("\n"))
+        enc.body.should eq body_ok.delete("\n")
       end
     end
     describe "#parse" do
       it "correctly parse ok header" do
-        head = "$ANSIBLE_VAULT;1.2;AES256;vault-id-label"
-        enc = Nanvault::Encrypted.new [head, body_ok]
+        head = "$ANSIBLE_VAULT;1.2;AES256;vault-id-label\n"
+        enc = Nanvault::Encrypted.new(head + body_ok)
         enc.parse
         exp_vault_info = {"version" => "1.2", "alg" => "AES256", "label" => "vault-id-label"}
         enc.vault_info.should eq exp_vault_info
       end
 
       it "correctly parse ok-nolabel header" do
-        head = "$ANSIBLE_VAULT;1.1;AES256"
-        enc = Nanvault::Encrypted.new [head, body_ok]
+        head = "$ANSIBLE_VAULT;1.1;AES256\n"
+        enc = Nanvault::Encrypted.new cdata_ok
         enc.parse
         exp_vault_info = {"version" => "1.1", "alg" => "AES256", "label" => nil}
         enc.vault_info.should eq exp_vault_info
       end
 
       it "correctly handles incomplete header" do
-        head = "$ANSIBLE_VAULT;1.1"
-        enc = Nanvault::Encrypted.new [head, body_ok]
-        expect_raises(Nanvault::BadData, "Invalid input file: bad header") do
+        head = "$ANSIBLE_VAULT;1.1\n"
+        enc = Nanvault::Encrypted.new(head + body_ok)
+        expect_raises(Nanvault::BadData, "Invalid input data: bad header") do
           enc.parse
         end
       end
 
-      it "correctly handles unsupported header" do
-        head = "FOOFILEHEAD"
-        enc = Nanvault::Encrypted.new [head, body_ok]
-        expect_raises(Nanvault::BadData, "Invalid input file: bad header") do
+      it "correctly handles unsupported header - with newline" do
+        head = "FOOFILEHEAD\n"
+        enc = Nanvault::Encrypted.new(head + body_ok)
+        expect_raises(Nanvault::BadData, "Invalid input data: bad header") do
           enc.parse
+        end
+      end
+
+      it "correctly handles unsupported header - no newline" do
+        head = "FOOFILEHEAD"
+        expect_raises(Nanvault::BadData, "Invalid input data") do
+          enc = Nanvault::Encrypted.new(head)
         end
       end
 
       it "correctly handles unsupported version" do
-        head = "$ANSIBLE_VAULT;1.0;AES"
-        enc = Nanvault::Encrypted.new [head, body_ok]
-        expect_raises(Nanvault::BadData, "Sorry: file format version 1.0 is not supported") do
+        head = "$ANSIBLE_VAULT;1.0;AES\n"
+        enc = Nanvault::Encrypted.new(head + body_ok)
+        expect_raises(Nanvault::BadData, "Sorry: format version 1.0 is not supported") do
           enc.parse
         end
       end
 
       it "correctly parse ok hex body" do
-        enc = Nanvault::Encrypted.new [header_ok, body_ok]
+        enc = Nanvault::Encrypted.new cdata_ok
         enc.parse
         enc.bbody.should eq body_ok_bytes
       end
 
       it "correctly handles non-hex body" do
-        enc = Nanvault::Encrypted.new [header_ok, "11ZZ11"]
-        expect_raises(Nanvault::BadData, "Invalid encoding in input file body") do
+        enc = Nanvault::Encrypted.new(header_ok + "11ZZ11")
+        expect_raises(Nanvault::BadData, "Invalid encoding in input data body") do
           enc.parse
         end
       end
 
       it "correctly parse ok body" do
-        enc = Nanvault::Encrypted.new [header_ok, body_ok]
+        enc = Nanvault::Encrypted.new cdata_ok
         enc.parse
         enc.bbody.should eq body_ok_bytes
         enc.salt.should eq body_ok_salt
@@ -139,36 +148,36 @@ describe Nanvault do
       end
 
       it "correctly handles short body - no ctext" do
-        enc = Nanvault::Encrypted.new [header_ok, body_no_ctext]
-        expect_raises(Nanvault::BadData, "Invalid input file body") do
+        enc = Nanvault::Encrypted.new(header_ok + body_no_ctext)
+        expect_raises(Nanvault::BadData, "Invalid input data body") do
           enc.parse
         end
       end
 
       it "correctly handles short body - no hmac" do
-        enc = Nanvault::Encrypted.new [header_ok, body_no_hmac]
-        expect_raises(Nanvault::BadData, "Invalid input file body") do
+        enc = Nanvault::Encrypted.new(header_ok + body_no_hmac)
+        expect_raises(Nanvault::BadData, "Invalid input data body") do
           enc.parse
         end
       end
 
       it "correctly handles short body - empty salt" do
-        enc = Nanvault::Encrypted.new [header_ok, ""]
-        expect_raises(Nanvault::BadData, "Invalid input file body") do
+        enc = Nanvault::Encrypted.new(header_ok + "\n")
+        expect_raises(Nanvault::BadData, "Invalid input data body") do
           enc.parse
         end
       end
 
       it "correctly handles short body - all empty" do
-        enc = Nanvault::Encrypted.new [header_ok, ""]
-        expect_raises(Nanvault::BadData, "Invalid input file body") do
+        enc = Nanvault::Encrypted.new(header_ok)
+        expect_raises(Nanvault::BadData, "Invalid input data body") do
           enc.parse
         end
       end
 
       describe "#decrypt" do
         it "correctly decrypts data - ok" do
-          enc = Nanvault::Encrypted.new [header_ok, body_ok]
+          enc = Nanvault::Encrypted.new cdata_ok
           enc.parse
           enc.password = password
           enc.decrypt
@@ -176,7 +185,7 @@ describe Nanvault do
         end
 
         it "correctly decrypts data - bad password" do
-          enc = Nanvault::Encrypted.new [header_ok, body_ok]
+          enc = Nanvault::Encrypted.new cdata_ok
           enc.parse
           enc.password = "badpassword"
           expect_raises(Nanvault::BadData, "Bad HMAC: wrong password or corrupted data") do
@@ -187,7 +196,7 @@ describe Nanvault do
 
       describe "#plaintext_string" do
         it "correctly return plaintext string" do
-          enc = Nanvault::Encrypted.new [header_ok, body_ok]
+          enc = Nanvault::Encrypted.new cdata_ok
           enc.parse
           enc.password = password
           enc.decrypt
@@ -197,6 +206,23 @@ describe Nanvault do
       end
 
     end
+  end
+
+  describe Nanvault::Plaintext do
+    ptext_str = "---\n# Test file\n- One\n- Two\n"
+    password = "foo"
+
+    salt = Bytes[73, 78, 139, 40, 17, 139, 123, 226, 11, 105, 246, 154, 89, 109, 40, 72,
+                         136, 16, 95, 193, 237, 86, 177, 98, 170, 54, 183, 152, 9, 6, 8, 50]
+
+    describe "#encrypt_int" do
+      it "correctly encrypts data - ok" do
+        pt = Nanvault::Plaintext.new(ptext_str)
+
+      end
+
+    end
+
   end
 
   describe Nanvault::Crypto do
