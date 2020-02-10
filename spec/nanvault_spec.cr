@@ -47,6 +47,8 @@ describe Nanvault do
     ptext = Bytes[45, 45, 45, 10, 35, 32, 84, 101, 115, 116, 32, 102, 105, 108, 101, 10, 45,
                       32, 79, 110, 101, 10, 45, 32, 84, 119, 111, 10]
 
+    ptext_str = "---\n# Test file\n- One\n- Two\n"
+
     describe "#initialize" do
       it "correctly loads header and body" do
         enc = Nanvault::Encrypted.new ["HEADER", "BODY1", "BODY2"]
@@ -164,21 +166,34 @@ describe Nanvault do
         end
       end
 
-      it "correctly decrypts data - ok" do
-        enc = Nanvault::Encrypted.new [header_ok, body_ok]
-        enc.parse
-        enc.password = password
-        enc.decrypt
-        enc.ptext.should eq ptext
+      describe "#decrypt" do
+        it "correctly decrypts data - ok" do
+          enc = Nanvault::Encrypted.new [header_ok, body_ok]
+          enc.parse
+          enc.password = password
+          enc.decrypt
+          enc.ptext.should eq ptext
+        end
+
+        it "correctly decrypts data - bad password" do
+          enc = Nanvault::Encrypted.new [header_ok, body_ok]
+          enc.parse
+          enc.password = "badpassword"
+          expect_raises(Nanvault::BadData, "Bad HMAC: wrong password or corrupted data") do
+            enc.decrypt
+          end
+        end
       end
 
-      it "correctly decrypts data - bad password" do
-        enc = Nanvault::Encrypted.new [header_ok, body_ok]
-        enc.parse
-        enc.password = "badpassword"
-        expect_raises(Nanvault::BadData, "Bad HMAC: wrong password or corrupted data") do
+      describe "#plaintext_string" do
+        it "correctly return plaintext string" do
+          enc = Nanvault::Encrypted.new [header_ok, body_ok]
+          enc.parse
+          enc.password = password
           enc.decrypt
+          enc.plaintext_str.should eq ptext_str
         end
+
       end
 
     end

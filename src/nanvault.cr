@@ -103,6 +103,11 @@ module Nanvault
       @ptext = Crypto.decrypt(cipher_iv, cipher_key, @ctext)
     end
 
+    # plaintext_string method
+    def plaintext_str()
+      return String.new(@ptext)
+    end
+
     # get bytes method
     # this performs an implicit "unhexlify-equivalent"
     private def get_bytes()
