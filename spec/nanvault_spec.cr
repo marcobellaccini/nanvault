@@ -215,12 +215,58 @@ describe Nanvault do
     salt = Bytes[73, 78, 139, 40, 17, 139, 123, 226, 11, 105, 246, 154, 89, 109, 40, 72,
                          136, 16, 95, 193, 237, 86, 177, 98, 170, 54, 183, 152, 9, 6, 8, 50]
 
-    describe "#encrypt_int" do
+    hmac = Bytes[95, 22, 121, 151, 113, 253, 23, 236, 60, 183, 250, 3, 232, 239, 99, 160,
+                         240, 38, 146, 170, 17, 250, 93, 101, 160, 163, 214, 189, 255, 174, 131, 237]
+   
+    ctext = Bytes[220, 238, 173, 195, 180, 240, 156, 89, 206, 18, 16, 40, 208, 144, 151, 217,
+                         117, 249, 63, 192, 109, 249, 63, 122, 208, 225, 18, 137, 52, 194, 253, 174]
+
+    header_nolabel = "$ANSIBLE_VAULT;1.1;AES256\n"
+
+    header_label = "$ANSIBLE_VAULT;1.2;AES256;mylabel\n"
+
+    body_str = "34393465386232383131386237626532306236396636396135393664323834383838313035666331\n" \
+              "6564353662313632616133366237393830393036303833320a356631363739393737316664313765\n" \
+              "63336362376661303365386566363361306630323639326161313166613564363561306133643662\n" \
+              "6466666165383365640a646365656164633362346630396335396365313231303238643039303937\n" \
+              "64393735663933666330366466393366376164306531313238393334633266646165"
+
+    describe "#encrypt_unsafe" do
       it "correctly encrypts data - ok" do
         pt = Nanvault::Plaintext.new(ptext_str)
-        1.should eq 0
-        # TODO: write tests for Plaintext class!!!!!!!!
+        pt.password = password
+        pt.salt = salt
+        pt.encrypt_unsafe
+        pt.ctext.should eq ctext
+        pt.hmac.should eq hmac
+      end
+      
+      it "correctly handles empty password" do
+        pt = Nanvault::Plaintext.new(ptext_str)
+        pt.password = ""
+        pt.salt = salt
+        expect_raises(ArgumentError, "Cannot encrypt with empty password") do
+          pt.encrypt_unsafe
+        end
+      end
+    end
 
+    describe "#encrypted_str" do
+      it "correctly computes encrypted string - no label" do
+        pt = Nanvault::Plaintext.new(ptext_str)
+        pt.password = password
+        pt.salt = salt
+        pt.encrypt_unsafe
+        pt.encrypted_str.should eq (header_nolabel + body_str)
+      end
+
+      it "correctly computes encrypted string - label" do
+        pt = Nanvault::Plaintext.new(ptext_str)
+        pt.password = password
+        pt.label = "mylabel"
+        pt.salt = salt
+        pt.encrypt_unsafe
+        pt.encrypted_str.should eq (header_label + body_str)
       end
 
     end

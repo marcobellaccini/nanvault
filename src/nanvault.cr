@@ -141,12 +141,12 @@ module Nanvault
       # generate random salt
       @salt = Random::Secure.random_bytes SALT_LEN
       # call internal, unsafe method
-      encrypt_int()
+      encrypt_unsafe()
     end
 
     # internal encrypt method - does NOT generate salt
     # NOTE: YOU SHOULD NOT USE THIS UNLESS YOU KNOW WHAT YOU'RE DOING
-    def encrypt_int()
+    def encrypt_unsafe()
       if @password == ""
         raise ArgumentError.new("Cannot encrypt with empty password")
       end
@@ -169,7 +169,8 @@ module Nanvault
       body = (@salt.hexstring + "\n" + @hmac.hexstring + "\n" + @ctext.hexstring).to_slice.hexstring
 
       # enforce 80 chars limit
-      body_lines = body.scan(/.{1,80}/m)
+      body_lines_matches = body.scan(/.{1,80}/m)
+      body_lines = body_lines_matches.map { |m| m[0] }
       body_limited = body_lines.join("\n")
 
       return header + body_limited
