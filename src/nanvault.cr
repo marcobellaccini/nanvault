@@ -78,11 +78,11 @@ module Nanvault
         raise BadData.new("Invalid input data body")
       end
 
-      # unhexlify again (revert nested hexlify)
+      # unhexlify again (revert crazy, nested hexlify)
       hmac_hex_bytes = rem_bbody[0..(hmac_end_idx - 1)]
       @hmac = VarUtil.unhexlify(hmac_hex_bytes)
 
-      # unhexlify again (revert nested hexlify)
+      # unhexlify again (revert crazy, nested hexlify)
       ctext_hex_bytes = rem_bbody + hmac_hex_bytes.size + 1
       @ctext = VarUtil.unhexlify(ctext_hex_bytes)
 
@@ -184,6 +184,7 @@ module Nanvault
     HMAC_ALG = OpenSSL::Algorithm::SHA256
     PBKDF2_KEY_SIZE = 80
     CIPHER_ALG_DEFAULT = "aes-256-ctr"
+    AES_BLOCK_SIZE = 16
 
     # class method to get cipher key, HMAC key and cipher IV
     def self.get_keys_iv(salt, password)
@@ -213,9 +214,7 @@ module Nanvault
       ptext_end = cipher.final
 
       # concatenate slices
-      ret_slice = Slice(UInt8).new(ptext_start.size + ptext_end.size)
-      ptext_start.copy_to ret_slice
-      ptext_end.copy_to(ret_slice + ptext_start.size)
+      ret_slice = VarUtil.cat_sl_u8(ptext_start, ptext_end)
 
       # remove padding
       padbytes = ret_slice[-1]
@@ -230,16 +229,17 @@ module Nanvault
       cipher.encrypt
       cipher.iv = cipher_iv
       cipher.key = cipher_key
-      cipher.padding = true
-      ctext_start = cipher.update(plaintext)
+      # pad plaintext ...with AES-CTR: why the hell?
+      # https://tools.ietf.org/html/rfc5652#section-6.3
+      pad_el = (AES_BLOCK_SIZE - (plaintext.size % AES_BLOCK_SIZE))
+      padding = Slice.new(pad_el, pad_el.to_u8)
+      padded_plaintext = VarUtil.cat_sl_u8(plaintext, padding)
+
+      ctext_start = cipher.update(padded_plaintext)
       ctext_end = cipher.final
 
-      # concatenate slices
-      ret_slice = Slice(UInt8).new(ctext_start.size + ctext_end.size)
-      ctext_start.copy_to ret_slice
-      ctext_end.copy_to(ret_slice + ctext_start.size)
-
-      return ret_slice
+      # concatenate slices and return
+      return VarUtil.cat_sl_u8(ctext_start, ctext_end)
     end
 
   end
@@ -255,6 +255,13 @@ module Nanvault
 
       rescue ArgumentError
         raise BadData.new("Bad data: invalid hex")
+    end
+    # class method to concatenate Uint8 slices
+    def self.cat_sl_u8(slice1, slice2)
+      ret_slice = Slice(UInt8).new(slice1.size + slice2.size)
+      slice1.copy_to ret_slice
+      slice2.copy_to(ret_slice + slice1.size)
+      return ret_slice
     end
   end
 

@@ -218,6 +218,8 @@ describe Nanvault do
     describe "#encrypt_int" do
       it "correctly encrypts data - ok" do
         pt = Nanvault::Plaintext.new(ptext_str)
+        1.should eq 0
+        # TODO: write tests for Plaintext class!!!!!!!!
 
       end
 
@@ -263,9 +265,17 @@ describe Nanvault do
 
     ptext = Bytes[45, 45, 45, 10, 35, 32, 84, 101, 115, 116, 32, 102, 105, 108, 101, 10, 45,
                       32, 79, 110, 101, 10, 45, 32, 84, 119, 111, 10]
+    
+    ptext_mul_blksize = Bytes[45, 45, 45, 10, 35, 32, 84, 101, 115, 116, 32, 102, 105, 108, 101, 10, 45,
+                            32, 79, 110, 101, 10, 45, 32, 84, 119, 111, 10, 45, 45, 45, 101]
 
     ctext = Bytes[220, 238, 173, 195, 180, 240, 156, 89, 206, 18, 16, 40, 208, 144, 151, 217,
                   117, 249, 63, 192, 109, 249, 63, 122, 208, 225, 18, 137, 52, 194, 253, 174]
+
+    ctext_mul_blksize = Bytes[220, 238, 173, 195, 180, 240, 156, 89, 206, 18, 16, 40, 208, 144,
+                              151, 217, 117, 249, 63, 192, 109, 249, 63, 122, 208, 225, 18, 137, 29, 235,
+                              212, 207, 89, 168, 217, 149, 128, 129, 246, 245, 67, 45, 106, 29, 111, 124,
+                              66, 19]
 
     describe "#get_keys_iv" do
       it "correctly get keys and iv" do
@@ -288,9 +298,24 @@ describe Nanvault do
     end
 
     describe "#decrypt" do
-      it "correctly decrypt data" do
+      it "correctly decrypts data" do
         com_ptext = Nanvault::Crypto.decrypt(cipher_iv, cipher_key, ctext)
         com_ptext.should eq ptext
+      end
+      it "correctly decrypts data - block-size multiple" do
+        com_ptext = Nanvault::Crypto.decrypt(cipher_iv, cipher_key, ctext_mul_blksize)
+        com_ptext.should eq ptext_mul_blksize
+      end
+    end
+
+    describe "#encrypt" do
+      it "correctly encrypts data" do
+        com_ctext = Nanvault::Crypto.encrypt(cipher_iv, cipher_key, ptext)
+        com_ctext.should eq ctext
+      end
+      it "correctly encrypts data - block-size multiple" do
+        com_ctext = Nanvault::Crypto.encrypt(cipher_iv, cipher_key, ptext_mul_blksize)
+        com_ctext.should eq ctext_mul_blksize
       end
     end
 
@@ -316,6 +341,19 @@ describe Nanvault do
         expect_raises(Nanvault::BadData, "Bad data: invalid hex") do
           Nanvault::VarUtil.unhexlify(Bytes[52,252])
         end
+      end
+    end
+
+    describe "#cat_sl" do
+      slice1 = Slice[1_u8, 1_u8]
+      slice2 = Slice[2_u8, 2_u8]
+      slice_res = Slice[1_u8, 1_u8, 2_u8, 2_u8]
+
+      it "correctly concatenate slices" do
+        Nanvault::VarUtil.cat_sl_u8(slice1, slice2).should eq slice_res
+      end
+      it "correctly concatenate slices - empty slice" do
+        Nanvault::VarUtil.cat_sl_u8(slice1, Slice(UInt8).new 0).should eq slice1
       end
     end
 
