@@ -6,10 +6,12 @@ op = :none
 password = ""
 infile = ""
 outfile = ""
+pass_file = ""
 
 OptionParser.parse do |parser|
   parser.banner = "Usage: nanvault"
   parser.on("-l LABEL", "--label=LABEL", "Specifies the vault-id-label") { |l| label = l }
+  parser.on("-p FILE", "--vault-password-file=FILE", "Specifies the vault password file") { |p| pass_file = p }
   parser.on("-h", "--help", "Show this help") { puts parser; exit(0) }
   parser.unknown_args do |args|
     if args.size != 0
@@ -23,6 +25,16 @@ OptionParser.parse do |parser|
     STDERR.puts parser
     exit(1)
   end
+end
+
+# if a password file was specified
+if pass_file != ""
+    begin
+        password = File.read(pass_file)
+    rescue
+        STDERR.puts "ERROR: unable to read vault password file."
+        exit(1)
+    end
 end
 
 # read input from stdin
@@ -41,11 +53,14 @@ else
     op = :encrypt
 end
 
-# get password
-puts "Enter password:"
-password = STDIN.noecho &.gets.try &.chomp
+# if no password file was specified
+if pass_file == ""
+    # get password
+    puts "Enter password:"
+    password = STDIN.noecho &.gets.try &.chomp
+end
 
-if password == Nil
+if password == Nil || password == ""
     STDERR.puts "ERROR: invalid password."
     exit(1)
 end
@@ -70,6 +85,7 @@ begin
 rescue ex
     puts "ERROR: #{ex.message}"
 else
-    # write output to stdout
-    STDOUT.puts "#{out_data}"
+    # write output to stdout, without trailing newline
+    STDOUT.print "#{out_data}"
+    STDOUT.flush
 end
