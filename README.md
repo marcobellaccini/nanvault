@@ -1,22 +1,42 @@
 # nanvault
 
 [![Build Status](https://travis-ci.org/marcobellaccini/nanvault.svg?branch=master)](https://travis-ci.org/marcobellaccini/nanvault)
+[![GitHub release](https://img.shields.io/github/release/marcobellaccini/nanvault.svg)](https://github.com/marcobellaccini/nanvault/releases)
 
 **nanvault** is not-ansible-vault.
 
 It is a simple, standalone, CLI tool to encrypt and decrypt files in the [Ansible Vault](https://docs.ansible.com/ansible/latest/user_guide/vault.html) format.
 
+**It is Minimalist**: *very few options*.
+
+**It is Powerful**: *has UNIX-style composability*.
+
 ## Installation
 
-TODO: Write installation instructions here
+You can download the latest binaries from the [releases page](https://github.com/marcobellaccini/nanvault/releases).
 
 ## Usage
 
-TODO: Write usage instructions here
+Encrypt and decrypt with a *vault password file*:
+```
+$ cat test.txt | nanvault -p passfile > test.enc
+$ cat test.enc | nanvault -p passfile > decrypted_test.txt
+
+```
+
+If the *vault password file* option is omitted, it prompts for a password.
+
+Get help and discover other options:
+```
+$ nanvault -h
+
+```
 
 ## Development
 
-TODO: Write development instructions here
+**nanvault** is proudly programmed in [Crystal](https://crystal-lang.org/).
+
+*<<Fast as C, Slick as Ruby>>*
 
 ## Contributing
 

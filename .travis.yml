@@ -5,7 +5,7 @@ language: crystal
 # this is for cross-tests
 before_install:
   - sudo apt-get -y install python-pip
-  - pip install ansible
+  - sudo pip install ansible
 
 # Uncomment the following if you'd like Travis to run specs and check code formatting
 script:
