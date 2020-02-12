@@ -6,7 +6,7 @@ authors:
 
 targets:
   nanvault:
-    main: src/nanvault.cr
+    main: src/cli.cr
 
 crystal: 0.32.1
 

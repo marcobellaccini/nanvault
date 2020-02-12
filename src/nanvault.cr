@@ -9,7 +9,7 @@ module Nanvault
   class Encrypted
     # these initializations also prevent this:
     # https://github.com/crystal-lang/crystal/issues/5931
-    property header = "", body = "", password = ""
+    property header = "", body = ""
     property bbody = Slice(UInt8).new 1
     property salt = Slice(UInt8).new 1
     property hmac = Slice(UInt8).new 1
@@ -17,17 +17,22 @@ module Nanvault
     property ptext = Slice(UInt8).new 1
     property vault_info = Hash(String, String | Nil).new
 
-    def initialize(ctext_str : String)
-      ctext_lines = ctext_str.split("\n")
-      @header = ctext_lines[0]
-      # this also handles the header-only data case
-      if ctext_lines[1]
-        @body = ctext_lines[1..-1].join()
-      end
+    setter password : String
 
+    def initialize(ctext_str : String)
+      # initialize password
+      @password = ""
+      begin
+        ctext_lines = ctext_str.split("\n")
+        @header = ctext_lines[0]
+        # this also handles the header-only data case
+        if ctext_lines[1]
+          @body = ctext_lines[1..-1].join()
+        end
       # rescue for bad data
       rescue ex: IndexError
         raise BadData.new("Invalid input data")
+      end
     end
 
     # parse method
@@ -99,6 +104,7 @@ module Nanvault
 
     # decrypt method
     def decrypt()
+      parse()
       cipher_key, hmac_key, cipher_iv = Crypto.get_keys_iv(@salt, @password.to_slice)
       Crypto.check_hmac(@ctext, hmac_key, @hmac)
       @ptext = Crypto.decrypt(cipher_iv, cipher_key, @ctext)
@@ -126,13 +132,17 @@ module Nanvault
     HMAC_ALG = OpenSSL::Algorithm::SHA256
     # these initializations also prevent this:
     # https://github.com/crystal-lang/crystal/issues/5931
-    property password = "", label = ""
+    property label = ""
     property salt = Slice(UInt8).new 1
     property ptext = Slice(UInt8).new 1
     property ctext = Slice(UInt8).new 1
     property hmac = Slice(UInt8).new 1
 
+    setter password : String
+
     def initialize(ptext_str : String)
+      # initialize password
+      @password = ""
       @ptext = ptext_str.to_slice
     end
 

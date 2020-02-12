@@ -1,3 +1,1 @@
-These files are used by unittests.
-
-They are encrypted with the password *"foo"*.
+Files are encrypted by *ansible-vault* with password *"foo"*.

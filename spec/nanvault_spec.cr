@@ -70,7 +70,7 @@ describe Nanvault do
         end
       end
 
-      it "load real data" do
+      it "load whole real data" do
         enc_str = File.read("spec/testfiles/test1.enc")
         enc = Nanvault::Encrypted.new enc_str
         enc.header.should eq(header_ok.rstrip("\n"))
@@ -178,7 +178,6 @@ describe Nanvault do
       describe "#decrypt" do
         it "correctly decrypts data - ok" do
           enc = Nanvault::Encrypted.new cdata_ok
-          enc.parse
           enc.password = password
           enc.decrypt
           enc.ptext.should eq ptext
@@ -186,7 +185,6 @@ describe Nanvault do
 
         it "correctly decrypts data - bad password" do
           enc = Nanvault::Encrypted.new cdata_ok
-          enc.parse
           enc.password = "badpassword"
           expect_raises(Nanvault::BadData, "Bad HMAC: wrong password or corrupted data") do
             enc.decrypt
@@ -197,7 +195,6 @@ describe Nanvault do
       describe "#plaintext_string" do
         it "correctly return plaintext string" do
           enc = Nanvault::Encrypted.new cdata_ok
-          enc.parse
           enc.password = password
           enc.decrypt
           enc.plaintext_str.should eq ptext_str
@@ -240,7 +237,7 @@ describe Nanvault do
         pt.ctext.should eq ctext
         pt.hmac.should eq hmac
       end
-      
+
       it "correctly handles empty password" do
         pt = Nanvault::Plaintext.new(ptext_str)
         pt.password = ""
