@@ -27,47 +27,45 @@ module Nanvault
         @header = ctext_lines[0]
         # this also handles the header-only data case
         if ctext_lines[1]
-          @body = ctext_lines[1..-1].join()
+          @body = ctext_lines[1..-1].join
         end
-      # rescue for bad data
-      rescue ex: IndexError
+        # rescue for bad data
+      rescue ex : IndexError
         raise BadData.new("Invalid input data")
       end
     end
 
     # parse method
-    def parse()
+    def parse
       parse_header()
 
       case @vault_info["version"]
-      when "1.1","1.2"
+      when "1.1", "1.2"
         parse_body()
       else
         raise BadData.new("Sorry: format version #{@vault_info["version"]} is not supported")
       end
-
     end
 
     # parse header method
-    private def parse_header()
+    private def parse_header
       header_re = /^\$ANSIBLE_VAULT;(?<version>[^;\n\s]+);(?<alg>[^;\n\s]+);?(?<label>[^;\n\s]+)?$/
       match = header_re.match(@header)
 
-      if ! match
+      if !match
         raise BadData.new("Invalid input data: bad header")
       end
-      
-      @vault_info = match.named_captures
 
+      @vault_info = match.named_captures
     end
 
     # parse body method
-    private def parse_body()
+    private def parse_body
       get_bytes()
 
-      salt_end_idx = @bbody.index { |x| x == 0x0a_u8}
+      salt_end_idx = @bbody.index { |x| x == 0x0a_u8 }
 
-      if ! salt_end_idx
+      if !salt_end_idx
         raise BadData.new("Invalid input data body")
       end
 
@@ -79,7 +77,7 @@ module Nanvault
 
       hmac_end_idx = rem_bbody.index { |x| x == 0x0a_u8 }
 
-      if ! hmac_end_idx
+      if !hmac_end_idx
         raise BadData.new("Invalid input data body")
       end
 
@@ -94,16 +92,14 @@ module Nanvault
       if @salt.size == 0 || @hmac.size == 0 || @ctext.size == 0
         raise BadData.new("Invalid input data body")
       end
-
-    rescue ex: IndexError
+    rescue ex : IndexError
       raise BadData.new("Invalid input data body")
-    rescue ex: ArgumentError
+    rescue ex : ArgumentError
       raise BadData.new("Invalid input data body")
-
     end
 
     # decrypt method
-    def decrypt()
+    def decrypt
       parse()
       cipher_key, hmac_key, cipher_iv = Crypto.get_keys_iv(@salt, @password.to_slice)
       Crypto.check_hmac(@ctext, hmac_key, @hmac)
@@ -111,18 +107,17 @@ module Nanvault
     end
 
     # plaintext_string method
-    def plaintext_str()
+    def plaintext_str
       return String.new(@ptext)
     end
 
     # get bytes method
     # this performs an implicit "unhexlify-equivalent"
-    private def get_bytes()
+    private def get_bytes
       @bbody = @body.hexbytes
-      rescue ex: ArgumentError
-        raise BadData.new("Invalid encoding in input data body")
+    rescue ex : ArgumentError
+      raise BadData.new("Invalid encoding in input data body")
     end
-
   end
 
   # Plaintext data class
@@ -147,7 +142,7 @@ module Nanvault
     end
 
     # encrypt method - also generates safe salt
-    def encrypt()
+    def encrypt
       # generate random salt
       @salt = Random::Secure.random_bytes SALT_LEN
       # call internal, unsafe method
@@ -156,7 +151,7 @@ module Nanvault
 
     # internal encrypt method - does NOT generate salt
     # NOTE: YOU SHOULD NOT USE THIS UNLESS YOU KNOW WHAT YOU'RE DOING
-    def encrypt_unsafe()
+    def encrypt_unsafe
       if @password == ""
         raise ArgumentError.new("Cannot encrypt with empty password")
       end
@@ -169,7 +164,7 @@ module Nanvault
     end
 
     # encrypted string method
-    def encrypted_str()
+    def encrypted_str
       if @label == ""
         header = "$ANSIBLE_VAULT;1.1;AES256\n"
       else
@@ -185,17 +180,16 @@ module Nanvault
 
       return header + body_limited
     end
-
   end
 
   # Crypto class
   class Crypto
-    PBKDF2_ITERATIONS = 10000
-    PBKDF2_ALG = OpenSSL::Algorithm::SHA256
-    HMAC_ALG = OpenSSL::Algorithm::SHA256
-    PBKDF2_KEY_SIZE = 80
+    PBKDF2_ITERATIONS  = 10000
+    PBKDF2_ALG         = OpenSSL::Algorithm::SHA256
+    HMAC_ALG           = OpenSSL::Algorithm::SHA256
+    PBKDF2_KEY_SIZE    = 80
     CIPHER_ALG_DEFAULT = "aes-256-ctr"
-    AES_BLOCK_SIZE = 16
+    AES_BLOCK_SIZE     = 16
 
     # class method to get cipher key, HMAC key and cipher IV
     def self.get_keys_iv(salt, password)
@@ -229,7 +223,7 @@ module Nanvault
 
       # remove padding
       padbytes = ret_slice[-1]
-      ret_slice = ret_slice[0..-1-padbytes]
+      ret_slice = ret_slice[0..-1 - padbytes]
 
       return ret_slice
     end
@@ -252,7 +246,6 @@ module Nanvault
       # concatenate slices and return
       return VarUtil.cat_sl_u8(ctext_start, ctext_end)
     end
-
   end
 
   # VarUtil Class
@@ -263,10 +256,10 @@ module Nanvault
       hinsl_arr = hinsl.to_a
       hinsl_arr_chr = hinsl_arr.map { |x| x.as(UInt8).chr }
       return hinsl_arr_chr.join.hexbytes
-
-      rescue ArgumentError
-        raise BadData.new("Bad data: invalid hex")
+    rescue ArgumentError
+      raise BadData.new("Bad data: invalid hex")
     end
+
     # class method to concatenate Uint8 slices
     def self.cat_sl_u8(slice1, slice2)
       ret_slice = Slice(UInt8).new(slice1.size + slice2.size)
