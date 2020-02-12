@@ -1,5 +1,7 @@
 # nanvault
 
+[![Build Status](https://travis-ci.org/marcobellaccini/nanvault.svg?branch=master)](https://travis-ci.org/marcobellaccini/nanvault)
+
 **nanvault** is not-ansible-vault.
 
 It is a simple, standalone, CLI tool to encrypt and decrypt files in the [Ansible Vault](https://docs.ansible.com/ansible/latest/user_guide/vault.html) format.
