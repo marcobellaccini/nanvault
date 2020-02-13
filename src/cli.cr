@@ -4,6 +4,9 @@ require "./nanvault"
 # environment variable key for vault password file
 ENV_NAME = "NANVAULT_PASSFILE"
 
+# password file short option
+PASSFILE_SHORT_OPT = "-p PASSFILE"
+
 label = ""
 op = :none
 password = ""
@@ -15,7 +18,7 @@ pass_file = ""
 OptionParser.parse do |parser|
   parser.banner = "Usage: nanvault"
   parser.on("-l LABEL", "--label=LABEL", "Specifies the vault-id-label") { |l| label = l }
-  parser.on("-p FILE", "--vault-password-file=FILE", "Specifies the vault password file") { |p| pass_file_passed = p }
+  parser.on(PASSFILE_SHORT_OPT, "--vault-password-file=PASSFILE", "Specifies the vault password file") { |p| pass_file_passed = p }
   parser.on("-h", "--help", "Show this help") { puts parser; exit(0) }
   parser.unknown_args do |args|
     if args.size != 0
@@ -38,6 +41,11 @@ if pass_file_passed != ""
 # but the ENV_NAME env var is available
 elsif ENV.has_key?(ENV_NAME)
     pass_file = ENV[ENV_NAME]
+else
+    STDERR.puts "ERROR: no password file is available."
+    STDERR.puts "Please specify a password file through the '#{PASSFILE_SHORT_OPT}' " \
+                "command-line option or the '#{ENV_NAME}' environment variable."
+    exit(1)
 end
 
 # read password file
@@ -45,7 +53,7 @@ if pass_file != ""
   begin
     password = File.read(pass_file)
   rescue
-    STDERR.puts "ERROR: unable to read vault password file."
+    STDERR.puts "ERROR: unable to read vault password file '#{pass_file}'"
     exit(1)
   end
 end
@@ -64,18 +72,6 @@ if in_data.starts_with?("$ANSIBLE_VAULT")
   op = :decrypt
 else
   op = :encrypt
-end
-
-# if no password file was specified
-if pass_file == ""
-  # get password
-  puts "Enter password:"
-  password = STDIN.noecho &.gets.try &.chomp
-end
-
-if password == Nil || password == ""
-  STDERR.puts "ERROR: invalid password."
-  exit(1)
 end
 
 begin

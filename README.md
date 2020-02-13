@@ -24,7 +24,12 @@ $ cat test.enc | nanvault -p passfile > decrypted_test.txt
 
 ```
 
-If the *vault password file* option is omitted, it prompts for a password.
+If the *NANVAULT_PASSFILE* environment variable is set, the *vault password file* option may be omitted:
+```
+$ export NANVAULT_PASSFILE="passfile"
+$ cat test.txt | nanvault > test.enc
+
+```
 
 Get help and discover other options:
 ```
