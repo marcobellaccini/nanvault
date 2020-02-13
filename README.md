@@ -5,11 +5,11 @@
 
 **nanvault** is not-ansible-vault.
 
-It is a simple, standalone, CLI tool to encrypt and decrypt files in the [Ansible Vault](https://docs.ansible.com/ansible/latest/user_guide/vault.html) format.
+It is a standalone, CLI tool to encrypt and decrypt files in the [Ansible Vault](https://docs.ansible.com/ansible/latest/user_guide/vault.html) format.
 
-**It is Minimalist**: *very few options*.
+**It is Simple**: *very few options*.
 
-**It is Powerful**: *has UNIX-style composability*.
+**It is Powerful**: *has UNIX-style composability - it plays with [pipes](https://en.wikipedia.org/wiki/Pipeline_(Unix))!*.
 
 ## Installation
 

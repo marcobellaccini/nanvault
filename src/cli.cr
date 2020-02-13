@@ -1,17 +1,21 @@
 require "option_parser"
 require "./nanvault"
 
+# environment variable key for vault password file
+ENV_NAME = "NANVAULT_PASSFILE"
+
 label = ""
 op = :none
 password = ""
 infile = ""
 outfile = ""
+pass_file_passed = ""
 pass_file = ""
 
 OptionParser.parse do |parser|
   parser.banner = "Usage: nanvault"
   parser.on("-l LABEL", "--label=LABEL", "Specifies the vault-id-label") { |l| label = l }
-  parser.on("-p FILE", "--vault-password-file=FILE", "Specifies the vault password file") { |p| pass_file = p }
+  parser.on("-p FILE", "--vault-password-file=FILE", "Specifies the vault password file") { |p| pass_file_passed = p }
   parser.on("-h", "--help", "Show this help") { puts parser; exit(0) }
   parser.unknown_args do |args|
     if args.size != 0
@@ -27,7 +31,16 @@ OptionParser.parse do |parser|
   end
 end
 
-# if a password file was specified
+# if a password file was specified via command-line option
+if pass_file_passed != ""
+    pass_file = pass_file_passed
+# if a password file was not specified
+# but the ENV_NAME env var is available
+elsif ENV.has_key?(ENV_NAME)
+    pass_file = ENV[ENV_NAME]
+end
+
+# read password file
 if pass_file != ""
   begin
     password = File.read(pass_file)
