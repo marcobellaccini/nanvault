@@ -17,8 +17,9 @@ pass_file = ""
 
 OptionParser.parse do |parser|
   parser.banner = "Usage: nanvault"
-  parser.on("-l LABEL", "--label=LABEL", "Specifies the vault-id-label") { |l| label = l }
   parser.on(PASSFILE_SHORT_OPT, "--vault-password-file=PASSFILE", "Specifies the vault password file") { |p| pass_file_passed = p }
+  parser.on("-g", "--generate", "Generate safe password") { puts "#{Nanvault::Crypto.genpass}"; exit(0) }
+  parser.on("-l LABEL", "--label=LABEL", "Specifies the vault-id-label") { |l| label = l }
   parser.on("-h", "--help", "Show this help") { puts parser; exit(0) }
   parser.unknown_args do |args|
     if args.size != 0

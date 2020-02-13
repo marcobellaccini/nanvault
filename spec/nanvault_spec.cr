@@ -354,6 +354,13 @@ describe Nanvault do
         com_ctext.should eq ctext_mul_blksize
       end
     end
+
+    describe "#genpass" do
+      it "correctly generate password of the right length" do
+        pass = Nanvault::Crypto.genpass
+        pass.size.should eq 20 # 20 is (128/Math.log2(MAX_CHAR - MIN_CHAR - 1)).ceil.to_i
+      end
+    end
   end
 
   describe Nanvault::VarUtil do

@@ -190,6 +190,11 @@ module Nanvault
     PBKDF2_KEY_SIZE    = 80
     CIPHER_ALG_DEFAULT = "aes-256-ctr"
     AES_BLOCK_SIZE     = 16
+    
+    # password generation constants
+    # alphabet is made up of chars corresponding to ints between these values
+    MIN_CHAR = 33
+    MAX_CHAR = 126
 
     # class method to get cipher key, HMAC key and cipher IV
     def self.get_keys_iv(salt, password)
@@ -246,6 +251,19 @@ module Nanvault
       # concatenate slices and return
       return VarUtil.cat_sl_u8(ctext_start, ctext_end)
     end
+
+    # class method to generate a random, safe password
+    def self.genpass()
+      gen_password = ""
+      # password length to get at least 128 bit security
+      # NOTE: the "-1" is there because Random::Secure.rand(n) returns numbers from 0 to n-1
+      pass_len = (128/Math.log2(MAX_CHAR - MIN_CHAR - 1)).ceil.to_i
+      pass_len.times do
+        gen_password += (MIN_CHAR + Random::Secure.rand(MAX_CHAR-MIN_CHAR)).chr.to_s
+      end
+      return gen_password
+    end
+
   end
 
   # VarUtil Class
