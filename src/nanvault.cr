@@ -194,7 +194,7 @@ module Nanvault
 
     # password generation constants
     # alphabet is made up of chars corresponding to ints between these values
-    MIN_CHAR = 33
+    MIN_CHAR =  33
     MAX_CHAR = 126
 
     # get safe password length macro
@@ -261,16 +261,15 @@ module Nanvault
     end
 
     # class method to generate a random, safe password
-    def self.genpass()
+    def self.genpass
       gen_password = ""
       # password length to get at least 128 bit security
       pass_len = get_safe_pass_len 128
       pass_len.times do
-        gen_password += (MIN_CHAR + Random::Secure.rand(MAX_CHAR-MIN_CHAR)).chr.to_s
+        gen_password += (MIN_CHAR + Random::Secure.rand(MAX_CHAR - MIN_CHAR)).chr.to_s
       end
       return gen_password
     end
-
   end
 
   # VarUtil Class
@@ -312,9 +311,9 @@ module Nanvault
     # class method to get yaml hash raw data from key and value
     def self.get_yaml(key, value)
       yaml = YAML.build do |builder|
-        builder.mapping(anchor=nil, tag=nil, style=YAML::MappingStyle::BLOCK) do
+        builder.mapping(anchor = nil, tag = nil, style = YAML::MappingStyle::BLOCK) do
           builder.scalar key
-          builder.scalar(value, anchor=nil, tag="vault", style=YAML::ScalarStyle::LITERAL)
+          builder.scalar(value, anchor = nil, tag = "vault", style = YAML::ScalarStyle::LITERAL)
         end
       end
       # there must be a cleaner solution... in the meanwhile:
@@ -323,7 +322,6 @@ module Nanvault
       # - put newlines
       return yaml.to_s.lines[1..-1].join.sub("<vault> |-", "vault |").gsub("  ", "\n  ")
     end
-
   end
 
   # Exception type for bad data
