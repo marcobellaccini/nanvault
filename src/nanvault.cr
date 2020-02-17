@@ -179,7 +179,7 @@ module Nanvault
       body_lines = body_lines_matches.map { |m| m[0] }
       body_limited = body_lines.join("\n")
 
-      return header + body_limited
+      return header + body_limited + "\n"
     end
   end
 
@@ -320,7 +320,7 @@ module Nanvault
       # - strip first line
       # - get the right tag, remove trailing '-'
       # - put newlines
-      return yaml.to_s.lines[1..-1].join.sub("<vault> |-", "vault |").gsub("  ", "\n  ")
+      return yaml.to_s.lines[1..-1].join.sub("<vault> |", "vault |").gsub("  ", "\n  ") + "\n"
     end
   end
 

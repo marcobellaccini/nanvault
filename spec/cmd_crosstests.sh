@@ -56,41 +56,51 @@ fi
 # generate workfile
 cp $PLAINTEXT_FILE $WORK_FILE
 
-## NO LABEL
+## CRYPTO - NO LABEL
+echo "#crypto-no-label"
 
 # encrypt with nanvault, decrypt with nanvault
+echo "encrypt with nanvault, decrypt with nanvault"
 cat $WORK_FILE | $NANVAULT -p $VAULTPASS_FILE | $NANVAULT -p $VAULTPASS_FILE > $OUT_FILE
 checkfiles
 
 # encrypt with nanvault, decrypt with ansible-vault
+echo "encrypt with nanvault, decrypt with ansible-vault"
 cat $WORK_FILE | $NANVAULT -p $VAULTPASS_FILE > $OUT_FILE
 ansible-vault decrypt --vault-password-file $VAULTPASS_FILE $OUT_FILE
 checkfiles
 
 # encrypt with ansible-vault, decrypt with nanvault
+echo "encrypt with ansible-vault, decrypt with nanvault"
 ansible-vault encrypt --vault-password-file $VAULTPASS_FILE $WORK_FILE
 cat $WORK_FILE | $NANVAULT -p $VAULTPASS_FILE > $OUT_FILE
 checkfiles
 
 ## LABEL
+echo "#crypto-label"
 
 # encrypt with nanvault, decrypt with nanvault
+echo "encrypt with nanvault, decrypt with nanvault"
 cat $WORK_FILE | $NANVAULT -p $VAULTPASS_FILE -l mylabel | $NANVAULT -p $VAULTPASS_FILE > $OUT_FILE
 checkfiles
 
 # encrypt with nanvault, decrypt with ansible-vault
+echo "encrypt with nanvault, decrypt with ansible-vault"
 cat $WORK_FILE | $NANVAULT -p $VAULTPASS_FILE -l mylabel > $OUT_FILE
 ansible-vault decrypt --vault-password-file $VAULTPASS_FILE $OUT_FILE
 checkfiles
 
 # encrypt with ansible-vault, decrypt with nanvault
+echo "encrypt with ansible-vault, decrypt with nanvault"
 ansible-vault encrypt --vault-id $VAULTPASS_FILE $WORK_FILE
 cat $WORK_FILE | $NANVAULT -p $VAULTPASS_FILE > $OUT_FILE
 checkfiles
 
 ## YAML strings
+echo "#yaml"
 
 # to YAML with nanvault, from YAML with nanvault
+echo "to YAML with nanvault, from YAML with nanvault"
 Y_MYVAL="foo"
 YEI_OUT=$(echo -n "$Y_MYVAL" | $NANVAULT -y mystuff | $NANVAULT -Y)
 if [ "$YEI_OUT" != "$Y_MYVAL" ]
@@ -100,6 +110,7 @@ if [ "$YEI_OUT" != "$Y_MYVAL" ]
 fi
 
 # to YAML with ansible-vault, from YAML with nanvault
+echo "to YAML with ansible-vault, from YAML with nanvault"
 Y_MYVAL="foo"
 YEI_OUT=$(echo -n "$Y_MYVAL" | ansible-vault encrypt_string --vault-password-file $VAULTPASS_FILE --stdin-name 'mystuff' | $NANVAULT -Y | $NANVAULT -p $VAULTPASS_FILE)
 if [ "$YEI_OUT" != "$Y_MYVAL" ]
