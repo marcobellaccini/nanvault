@@ -4,7 +4,7 @@ require "yaml"
 
 # TODO: Write documentation for `Nanvault`
 module Nanvault
-  VERSION = "0.1.0"
+  VERSION = "0.2.0"
 
   # Encrypted data class
   class Encrypted

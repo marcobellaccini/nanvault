@@ -16,7 +16,10 @@ pass_file_passed = ""
 pass_file = ""
 
 OptionParser.parse do |parser|
-    parser.banner = "Usage: nanvault"
+    parser.banner = "nanvault: a standalone CLI tool to encrypt and decrypt files in the Ansible Vault format.\n" \
+                    "More information, usage examples and candies at:\n" \
+                    "https://github.com/marcobellaccini/nanvault\n" \
+                    "Usage: nanvault"
     parser.on(PASSFILE_SHORT_OPT, "--vault-password-file=PASSFILE", "Specifies the vault password file") { |p| pass_file_passed = p }
     parser.on("-g", "--generate", "Password-generation mode: generates safe password") { write_stdout(Nanvault::Crypto.genpass); exit(0) }
     parser.on("-y KEYNAME", "--to-yaml=KEYNAME", "YAML-string mode: to YAML") { |k| to_yaml_mode(k) }
