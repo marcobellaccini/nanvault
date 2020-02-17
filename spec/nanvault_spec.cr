@@ -399,4 +399,55 @@ describe Nanvault do
       end
     end
   end
+
+  describe Nanvault::YAMLString do
+    valid_yaml = "the_secret: !vault |\n" \
+                  "  $ANSIBLE_VAULT;1.1;AES256\n" \
+                  "  62313365396662343061393464336163383764373764613633653634306231386433626436623361\n" \
+                  "  6134333665353966363534333632666535333761666131620a663537646436643839616531643561\n" \
+                  "  63396265333966386166373632626539326166353965363262633030333630313338646335303630\n" \
+                  "  3438626666666137650a353638643435666633633964366338633066623234616432373231333331\n" \
+                  "  6564"
+    
+    other_valid_yaml = "another_secret: !vault |\n" \
+                  "  $ANSIBLE_VAULT;1.1;AES256\n" \
+                  "  62313365396662343061393464336163383764373764613633653634306231386433626436623361\n" \
+                  "  6134333665353966363534333632666535333761666131620a663537646436643839616531643561\n" \
+                  "  63396265333966386166373632626539326166353965363262633030333630313338646335303630\n" \
+                  "  3438626666666137650a353638643435666633633964366338633066623234616432373231333331\n" \
+                  "  6564"
+    
+    invalid_yaml = "foofoo"
+
+    value = "$ANSIBLE_VAULT;1.1;AES256\n" \
+            "62313365396662343061393464336163383764373764613633653634306231386433626436623361\n" \
+            "6134333665353966363534333632666535333761666131620a663537646436643839616531643561\n" \
+            "63396265333966386166373632626539326166353965363262633030333630313338646335303630\n" \
+            "3438626666666137650a353638643435666633633964366338633066623234616432373231333331\n" \
+            "6564"
+    
+    describe "#get_value" do
+      it "correctly gets value from valid yaml" do
+        Nanvault::YAMLString.get_value(valid_yaml).should eq value
+      end
+      it "correctly handles bad yaml string" do
+        expect_raises(ArgumentError, "Bad yaml string") do
+          Nanvault::YAMLString.get_value(invalid_yaml)
+        end
+      end
+      it "correctly handles bad yaml string - multiple kv" do
+        expect_raises(ArgumentError, "Bad yaml string: cannot handle multiple key-value pairs") do
+          Nanvault::YAMLString.get_value(valid_yaml + "\n" + other_valid_yaml)
+        end
+      end
+    end
+
+    describe "#get_yaml" do
+      it "correctly gets yaml from valid k-v" do
+        Nanvault::YAMLString.get_yaml("the_secret", value).should eq valid_yaml
+      end
+    end
+
+  end
+
 end

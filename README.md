@@ -7,9 +7,9 @@
 
 It is a standalone, CLI tool to encrypt and decrypt files in the [Ansible Vault](https://docs.ansible.com/ansible/latest/user_guide/vault.html) format.
 
-**Simple**: *very few options.*
-
 **Powerful**: *has UNIX-style composability - you can play with [pipes](https://en.wikipedia.org/wiki/Pipeline_(Unix))!*
+
+**Smart**: *it guesses what you want to do, based on piped input.*
 
 **Batteries-included**: *it features a safe password generator.*
 
@@ -34,10 +34,27 @@ If the *NANVAULT_PASSFILE* environment variable is set, the *vault password file
 $ export NANVAULT_PASSFILE="passfile"
 $ nanvault -g > $NANVAULT_PASSFILE
 $ echo "Encrypt this! ^_^ " | nanvault
+$ANSIBLE_VAULT;1.1;AES256
+643439633661336237356434383036353...
 
 ```
 
-Get help and discover other options:
+You can also convert data to and from YAML (this is compatible with [*ansible-vault encrypt_string*](https://docs.ansible.com/ansible/latest/user_guide/vault.html#use-encrypt-string-to-create-encrypted-variables-to-embed-in-yaml)):
+```
+$ echo "Encrypt this! ^_^ " | nanvault | nanvault -y mystuff
+mystuff: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  653936313063303031376236373231336...
+$ echo "Encrypt this! ^_^ " | nanvault | nanvault -y mystuff > my.yml
+$ cat my.yml | nanvault -Y
+$ANSIBLE_VAULT;1.1;AES256
+6534346535376538306330623363653...
+$ cat my.yml | nanvault -Y | nanvault
+Encrypt this! ^_^
+```
+
+
+Get help and discover all the options:
 ```
 $ nanvault -h
 

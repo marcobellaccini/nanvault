@@ -1,5 +1,6 @@
 require "openssl"
 require "openssl/hmac"
+require "yaml"
 
 # TODO: Write documentation for `Nanvault`
 module Nanvault
@@ -190,11 +191,18 @@ module Nanvault
     PBKDF2_KEY_SIZE    = 80
     CIPHER_ALG_DEFAULT = "aes-256-ctr"
     AES_BLOCK_SIZE     = 16
-    
+
     # password generation constants
     # alphabet is made up of chars corresponding to ints between these values
     MIN_CHAR = 33
     MAX_CHAR = 126
+
+    # get safe password length macro
+    # calculates password length to get at least n bit security
+    # NOTE: the "-1" is there because Random::Secure.rand(k) returns numbers from 0 to k-1
+    macro get_safe_pass_len(n)
+      ({{n}}/Math.log2(MAX_CHAR - MIN_CHAR - 1)).ceil.to_i
+    end
 
     # class method to get cipher key, HMAC key and cipher IV
     def self.get_keys_iv(salt, password)
@@ -256,8 +264,7 @@ module Nanvault
     def self.genpass()
       gen_password = ""
       # password length to get at least 128 bit security
-      # NOTE: the "-1" is there because Random::Secure.rand(n) returns numbers from 0 to n-1
-      pass_len = (128/Math.log2(MAX_CHAR - MIN_CHAR - 1)).ceil.to_i
+      pass_len = get_safe_pass_len 128
       pass_len.times do
         gen_password += (MIN_CHAR + Random::Secure.rand(MAX_CHAR-MIN_CHAR)).chr.to_s
       end
@@ -285,6 +292,38 @@ module Nanvault
       slice2.copy_to(ret_slice + slice1.size)
       return ret_slice
     end
+  end
+
+  # YAML-string Class
+  class YAMLString
+    # class method to get value from yaml hash raw data
+    def self.get_value(raw_data)
+      begin
+        yaml_data_hash = YAML.parse(raw_data).as_h
+      rescue
+        raise ArgumentError.new("Bad yaml string")
+      end
+      if yaml_data_hash.size != 1
+        raise ArgumentError.new("Bad yaml string: cannot handle multiple key-value pairs")
+      end
+      return yaml_data_hash.first_value
+    end
+
+    # class method to get yaml hash raw data from key and value
+    def self.get_yaml(key, value)
+      yaml = YAML.build do |builder|
+        builder.mapping(anchor=nil, tag=nil, style=YAML::MappingStyle::BLOCK) do
+          builder.scalar key
+          builder.scalar(value, anchor=nil, tag="vault", style=YAML::ScalarStyle::LITERAL)
+        end
+      end
+      # there must be a cleaner solution... in the meanwhile:
+      # - strip first line
+      # - get the right tag, remove trailing '-'
+      # - put newlines
+      return yaml.to_s.lines[1..-1].join.sub("<vault> |-", "vault |").gsub("  ", "\n  ")
+    end
+
   end
 
   # Exception type for bad data
