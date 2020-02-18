@@ -19,9 +19,26 @@ It is a standalone CLI tool to encrypt and decrypt files in the [Ansible® Vault
 
 ## Installation
 
+### GNU/Linux
+
 You can download the latest binaries from the [releases page](https://github.com/marcobellaccini/nanvault/releases).
 
 Then, you may want to copy them in some handy path (e.g.: */usr/bin*, */usr/local/bin*).
+
+### macOS
+
+At this moment, there are no precompiled binaries for you (the author is not a macOS user).
+
+However:
+- you can [build the program from the sources](#Building-from-sources) (it's easier than you might expect!)
+- ...and, if you feel like it, you can contribute to the project with your macOS skills
+
+### Windows
+
+Until the [Crystal Windows porting](https://github.com/crystal-lang/crystal/wiki/Porting-to-Windows) is completed,
+you can go with [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/install-win10).
+
+### From sources
 
 If you prefer, you can [build the program straight from the sources](#Building-from-sources).
 
@@ -89,8 +106,8 @@ $ nanvault -h
 2. Clone this repo (`git clone https://github.com/marcobellaccini/nanvault`)
 3. Build with *shards* (`shards build`)
 
-Instead, if you have Docker, you can compile a statically-linked binary
-by running the build script:
+Instead, if you have Docker, you can compile a statically-linked binary (using
+the official Crystal Alpine-Linux Docker images) by running the build script:
 ```
 ./build.sh [debug/release]
 ```
