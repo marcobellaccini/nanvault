@@ -17,6 +17,8 @@ It is a standalone CLI tool to encrypt and decrypt files in the [Ansible® Vault
 
 **Free and open-source**: *released under the MIT license.*
 
+[![asciicast](https://asciinema.org/a/302642.svg)](https://asciinema.org/a/302642)
+
 ## Installation
 
 ### GNU/Linux
