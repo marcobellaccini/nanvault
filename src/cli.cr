@@ -106,7 +106,8 @@ end
 # read password file
 if pass_file != ""
   begin
-    password = File.read(pass_file)
+    # in order to mimic ansible-vault behavior, newline should be chomped
+    password = File.read(pass_file).chomp
   rescue
     STDERR.puts "ERROR: unable to read vault password file '#{pass_file}'"
     exit(1)

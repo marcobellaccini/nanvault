@@ -268,7 +268,7 @@ module Nanvault
       pass_len.times do
         gen_password += (MIN_CHAR + Random::Secure.rand(MAX_CHAR - MIN_CHAR)).chr.to_s
       end
-      return gen_password
+      return gen_password + "\n" # newline for file-politeness
     end
   end
 

@@ -358,7 +358,7 @@ describe Nanvault do
     describe "#genpass" do
       it "correctly generate password of the right length" do
         pass = Nanvault::Crypto.genpass
-        pass.size.should eq 20 # 21 is (128/Math.log2(MAX_CHAR - MIN_CHAR - 1)).ceil.to_i
+        pass.size.should eq 21 # 21 is (128/Math.log2(MAX_CHAR - MIN_CHAR - 1)).ceil.to_i + newline
       end
     end
   end

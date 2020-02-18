@@ -47,7 +47,7 @@ echo -n "test plaintext" > $PLAINTEXT_FILE
 
 # check password file length
 PAS_SIZE=$(wc -m < "$VAULTPASS_FILE")
-if [ "$PAS_SIZE" -ne "20" ]
+if [ "$PAS_SIZE" -ne "21" ]
     then
         echo "PASSWORD FILE GENERATION FAILED."
         exiterror
