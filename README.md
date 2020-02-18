@@ -89,6 +89,12 @@ $ nanvault -h
 2. Clone this repo (`git clone https://github.com/marcobellaccini/nanvault`)
 3. Build with *shards* (`shards build`)
 
+Instead, if you have Docker, you can compile a statically-linked binary
+by running the build script:
+```
+./build.sh [debug/release]
+```
+
 ## Contributing
 
 1. Fork it (<https://github.com/marcobellaccini/nanvault/fork>)

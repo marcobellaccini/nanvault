@@ -6,6 +6,7 @@ language: crystal
 before_install:
   - sudo apt-get -y install python-pip
   - sudo pip install ansible
+  - sudo apt-get -y install libssl-dev libyaml-dev
 
 # Uncomment the following if you'd like Travis to run specs and check code formatting
 script:
