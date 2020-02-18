@@ -122,7 +122,7 @@ the official Crystal Alpine-Linux Docker images) by running the build script:
 
 ## Contributors
 
-- [Marco Bellaccini](https://github.com/marcobellaccini) - creator and maintainer
+- [Marco Bellaccini](https://github.com/marcobellaccini) - creator, maintainer and cool guy
 
 ---
 
