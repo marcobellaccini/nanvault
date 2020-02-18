@@ -2,7 +2,7 @@ require "openssl"
 require "openssl/hmac"
 require "yaml"
 
-# TODO: Write documentation for `Nanvault`
+# `Nanvault` module
 module Nanvault
   VERSION = "0.2.0"
 
