@@ -25,9 +25,12 @@ OptionParser.parse do |parser|
   parser.on("-y KEYNAME", "--to-yaml=KEYNAME", "YAML-string mode: to YAML") { |k| to_yaml_mode(k) }
   parser.on("-Y", "--from-yaml", "YAML-string mode: from YAML") { from_yaml_mode() }
   parser.on("-l LABEL", "--label=LABEL", "Specifies the vault-id-label") { |l| label = l }
+  parser.on("--version", "Print version") { puts "nanvault version #{Nanvault::VERSION}"; exit(0) }
   parser.on("-h", "--help", "Show this help") { puts parser; exit(0) }
   parser.unknown_args do |args|
-    if args.size != 0
+    # filter out unknown options
+    unk_args = args.find { |s| !s.starts_with?("-") }
+    if !unk_args.nil?
       STDERR.puts "ERROR: this program does not need arguments!"
       STDERR.puts parser
       exit(1)
