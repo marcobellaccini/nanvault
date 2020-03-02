@@ -52,7 +52,7 @@ jobs:
     - name: Upload build artifact
       uses: actions/upload-artifact@v1
       with:
-        name: nanvault-macos
+        name: nanvault-darwin
         path: ./bin/nanvault
 
   create_release:
@@ -80,16 +80,18 @@ jobs:
       uses: actions/download-artifact@v1
       with:
         name: nanvault-linux
-    - name: Download nanvault-macos
+    - name: Download nanvault-darwin
       uses: actions/download-artifact@v1
       with:
-        name: nanvault-macos
+        name: nanvault-darwin
 
     # create tar archives
     - shell: bash
       run: |
+        chmod +x ./nanvault-linux/nanvault
+        chmod +x ./nanvault-darwin/nanvault
         tar -czf nanvault-${{ steps.get_version.outputs.VERSION }}-linux-amd64.tar.gz -C ./nanvault-linux .
-        tar -czf nanvault-${{ steps.get_version.outputs.VERSION }}-darwin-amd64.tar.gz -C ./nanvault-macos .
+        tar -czf nanvault-${{ steps.get_version.outputs.VERSION }}-darwin-amd64.tar.gz -C ./nanvault-darwin .
 
     # upload archives
     - name: Upload Release Asset Linux
