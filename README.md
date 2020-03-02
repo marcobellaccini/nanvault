@@ -1,6 +1,6 @@
 # nanvault
 
-[![Build Status](https://travis-ci.org/marcobellaccini/nanvault.svg?branch=master)](https://travis-ci.org/marcobellaccini/nanvault)
+![nanvault tests](https://github.com/marcobellaccini/nanvault/workflows/nanvault%20tests/badge.svg)
 [![GitHub release](https://img.shields.io/github/release/marcobellaccini/nanvault.svg)](https://github.com/marcobellaccini/nanvault/releases)
 
 **nanvault** is not-ansible-vault.
