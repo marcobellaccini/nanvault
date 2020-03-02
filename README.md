@@ -23,15 +23,11 @@ It is a standalone CLI tool to encrypt and decrypt files in the [Ansible® Vault
 
 ### GNU/Linux
 
-You can download the latest binaries from the [releases page](https://github.com/marcobellaccini/nanvault/releases).
-
-Then, you may want to copy them in some handy path (e.g.: */usr/bin*, */usr/local/bin*).
+You can download the latest binary from the [releases page](https://github.com/marcobellaccini/nanvault/releases).
 
 ### macOS
 
 You can get the latest *darwin* build from the [releases page](https://github.com/marcobellaccini/nanvault/releases).
-
-Then, you may want to copy the binary in some handy path (e.g.: */usr/bin*, */usr/local/bin*).
 
 ### Windows
 
