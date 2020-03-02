@@ -29,11 +29,9 @@ Then, you may want to copy them in some handy path (e.g.: */usr/bin*, */usr/loca
 
 ### macOS
 
-At this moment, there are no precompiled binaries for you (the author is not a macOS user).
+You can get the latest *darwin* build from the [releases page](https://github.com/marcobellaccini/nanvault/releases).
 
-However:
-- you can [build the program from the sources](#Building-from-sources) (it's easier than you might expect!)
-- ...and, if you feel like it, you can contribute to the project with your macOS skills
+Then, you may want to copy the binary in some handy path (e.g.: */usr/bin*, */usr/local/bin*).
 
 ### Windows
 
