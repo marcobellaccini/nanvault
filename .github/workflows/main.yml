@@ -1,0 +1,46 @@
+name: nanvault tests
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    container:
+      image: crystallang/crystal:latest-alpine
+
+    steps:
+    - uses: actions/checkout@v2
+
+    # this is for bash and ansible
+    - name: Apk update
+      run: apk update
+    - name: Pre-req - bash
+      run: apk add bash
+    - name: Pre-req - pip
+      run: apk add py3-pip
+    - name: Pre-req - upgrade pip
+      run: pip3 install --upgrade pip
+    - name: Pre-req - libffi-dev
+      run: apk add libffi-dev
+    - name: Pre-req - python3-dev
+      run: apk add python3-dev
+    - name: Pre-req - ansible
+      run: pip3 install ansible
+
+    # nanvault tests
+    - name: Install dependencies
+      run: shards install
+    - name: Run unittests
+      run: crystal spec
+    - name: Run tool format check
+      run: crystal tool format --check
+    - name: Build
+      run: shards build
+    - name: Run cmd_crosstests
+      run: bash ./spec/cmd_crosstests.sh
