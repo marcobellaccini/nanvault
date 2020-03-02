@@ -24,6 +24,24 @@ jobs:
     - name: Get the version # https://github.community/t5/GitHub-Actions/How-to-get-just-the-tag-name/m-p/32163/highlight/true#M1024
       id: get_version
       run: echo ::set-output name=VERSION::$(echo $GITHUB_REF | cut -d / -f 3)
+    # save and upload release-upload-url in an artifact file (shared between jobs)
+    - shell: bash
+        run: |
+          echo ${{ steps.create_release.outputs.upload_url }} > release-upload-url.txt
+    - name: Upload release-upload-url
+        uses: actions/upload-artifact@v1
+        with:
+          name: release-upload-url
+          path: release-upload-url.txt
+    # save and upload version in an artifact file (shared between jobs)
+    - shell: bash
+        run: |
+          echo ${{ steps.get_version.outputs.VERSION }} > release-version.txt
+    - name: Upload release-version
+        uses: actions/upload-artifact@v1
+        with:
+          name: release-version
+          path: release-version.txt
 
   build_linux:
     needs: create_release
@@ -40,12 +58,22 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    # get artifacts containing release-upload-url and release-version
+    - name: Download release-upload-url
+        uses: actions/download-artifact@v1
+        with:
+          name: release-upload-url
+    - name: Download release-version
+        uses: actions/download-artifact@v1
+        with:
+          name: release-version
+
     - name: Install dependencies
       run: shards install
     - name: Build
       run: shards build --production --static
     - name: Create archive
-      run: tar -czf nanvault-${{ jobs.create_release.steps.get_version.outputs.VERSION }}-linux-amd64.tar.gz -C ./bin . 
+      run: tar -czf nanvault-$(cat release-version/release-version.txt)-linux-amd64.tar.gz -C ./bin . 
 
     - name: Upload Release Asset
       id: upload-release-asset 
@@ -53,9 +81,9 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ jobs.create_release.steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-        asset_path: ./nanvault-${{ jobs.create_release.steps.get_version.outputs.VERSION }}-linux-amd64.tar.gz
-        asset_name: nanvault-${{ jobs.create_release.steps.get_version.outputs.VERSION }}-linux-amd64.tar.gz
+        upload_url: $(cat release-upload-url/release-upload-url.txt)
+        asset_path: ./nanvault-$(cat release-version/release-version.txt)-linux-amd64.tar.gz
+        asset_name: nanvault-$(cat release-version/release-version.txt)-linux-amd64.tar.gz
         asset_content_type: application/gzip
 
   build_macos:
@@ -65,6 +93,16 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+
+    # get artifacts containing release-upload-url and release-version
+    - name: Download release-upload-url
+        uses: actions/download-artifact@v1
+        with:
+          name: release-upload-url
+    - name: Download release-version
+        uses: actions/download-artifact@v1
+        with:
+          name: release-version
 
     - name: Brew update
       run: brew update
@@ -76,7 +114,7 @@ jobs:
     - name: Build
       run: shards build --production # no static linking on macOS: https://developer.apple.com/library/archive/qa/qa1118/_index.html
     - name: Create archive
-      run: tar -czf nanvault-${{ jobs.create_release.steps.get_version.outputs.VERSION }}-darwin-amd64.tar.gz -C ./bin . 
+      run: tar -czf nanvault-$(cat release-version/release-version.txt)-darwin-amd64.tar.gz -C ./bin . 
 
     - name: Upload Release Asset
       id: upload-release-asset 
@@ -84,8 +122,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ jobs.create_release.steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-        asset_path: ./nanvault-${{ jobs.create_release.steps.get_version.outputs.VERSION }}-darwin-amd64.tar.gz
-        asset_name: nanvault-${{ jobs.create_release.steps.get_version.outputs.VERSION }}-darwin-amd64.tar.gz
+        upload_url: $(cat release-upload-url/release-upload-url.txt)
+        asset_path: ./nanvault-$(cat release-version/release-version.txt)-darwin-amd64.tar.gz
+        asset_name: nanvault-$(cat release-version/release-version.txt)-darwin-amd64.tar.gz
         asset_content_type: application/gzip
          
