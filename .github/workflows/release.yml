@@ -1,0 +1,87 @@
+name: Upload Release
+
+on:
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+    - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+jobs:
+  create_release:
+    name: Create Release
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+
+  build_linux:
+    name: Build for GNU/Linux
+    runs-on: ubuntu-latest
+
+    # we build statically linked binaries using the official
+    # Crystal alpine-linux docker image
+    # (we need musl-libc, hence we use Alpine)
+    # https://crystal-lang.org/2020/02/02/alpine-based-docker-images.html
+    container:
+      image: crystallang/crystal:latest-alpine
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install dependencies
+      run: shards install
+    - name: Build
+      run: shards build --production --static
+    - name: Create archive
+      run: tar -czf nanvault-${{ github.ref }}-linux-amd64.tar.gz -C ./bin . 
+
+    - name: Upload Release Asset
+      id: upload-release-asset 
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+        asset_path: ./nanvault-${{ github.ref }}-linux-amd64.tar.gz
+        asset_name: nanvault-${{ github.ref }}-linux-amd64.tar.gz
+        asset_content_type: application/gzip
+
+  build_macos:
+    name: Build for macOS
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Brew update
+      run: brew update
+    - name: Install Crystal
+      run: brew install crystal
+
+    - name: Install dependencies
+      run: shards install
+    - name: Build
+      run: shards build --production # no static linking on macOS: https://developer.apple.com/library/archive/qa/qa1118/_index.html
+    - name: Create archive
+      run: tar -czf nanvault-${{ github.ref }}-darwin-amd64.tar.gz -C ./bin . 
+
+    - name: Upload Release Asset
+      id: upload-release-asset 
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+        asset_path: ./nanvault-${{ github.ref }}-darwin-amd64.tar.gz
+        asset_name: nanvault-${{ github.ref }}-darwin-amd64.tar.gz
+        asset_content_type: application/gzip
+         
