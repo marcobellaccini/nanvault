@@ -26,22 +26,22 @@ jobs:
       run: echo ::set-output name=VERSION::$(echo $GITHUB_REF | cut -d / -f 3)
     # save and upload release-upload-url in an artifact file (shared between jobs)
     - shell: bash
-        run: |
-          echo ${{ steps.create_release.outputs.upload_url }} > release-upload-url.txt
+      run: |
+        echo ${{ steps.create_release.outputs.upload_url }} > release-upload-url.txt
     - name: Upload release-upload-url
-        uses: actions/upload-artifact@v1
-        with:
-          name: release-upload-url
-          path: release-upload-url.txt
+      uses: actions/upload-artifact@v1
+      with:
+        name: release-upload-url
+        path: release-upload-url.txt
     # save and upload version in an artifact file (shared between jobs)
     - shell: bash
-        run: |
-          echo ${{ steps.get_version.outputs.VERSION }} > release-version.txt
+      run: |
+        echo ${{ steps.get_version.outputs.VERSION }} > release-version.txt
     - name: Upload release-version
-        uses: actions/upload-artifact@v1
-        with:
-          name: release-version
-          path: release-version.txt
+      uses: actions/upload-artifact@v1
+      with:
+        name: release-version
+        path: release-version.txt
 
   build_linux:
     needs: create_release
@@ -60,13 +60,13 @@ jobs:
 
     # get artifacts containing release-upload-url and release-version
     - name: Download release-upload-url
-        uses: actions/download-artifact@v1
-        with:
-          name: release-upload-url
+      uses: actions/download-artifact@v1
+      with:
+        name: release-upload-url
     - name: Download release-version
-        uses: actions/download-artifact@v1
-        with:
-          name: release-version
+      uses: actions/download-artifact@v1
+      with:
+        name: release-version
 
     - name: Install dependencies
       run: shards install
@@ -96,13 +96,13 @@ jobs:
 
     # get artifacts containing release-upload-url and release-version
     - name: Download release-upload-url
-        uses: actions/download-artifact@v1
-        with:
-          name: release-upload-url
+      uses: actions/download-artifact@v1
+      with:
+        name: release-upload-url
     - name: Download release-version
-        uses: actions/download-artifact@v1
-        with:
-          name: release-version
+      uses: actions/download-artifact@v1
+      with:
+        name: release-version
 
     - name: Brew update
       run: brew update
