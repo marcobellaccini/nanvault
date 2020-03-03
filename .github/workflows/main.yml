@@ -7,8 +7,8 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
 
+  build_linux:
     runs-on: ubuntu-latest
 
     container:
@@ -30,6 +30,34 @@ jobs:
       run: apk add libffi-dev
     - name: Pre-req - python3-dev
       run: apk add python3-dev
+    - name: Pre-req - ansible
+      run: pip3 install ansible
+
+    # nanvault tests
+    - name: Install dependencies
+      run: shards install
+    - name: Run unittests
+      run: crystal spec
+    - name: Run tool format check
+      run: crystal tool format --check
+    - name: Build
+      run: shards build
+    - name: Run cmd_crosstests
+      run: bash ./spec/cmd_crosstests.sh
+
+  build_macos:
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    # install Crystal
+    - name: Brew update
+      run: brew update
+    - name: Install Crystal
+      run: brew install crystal
+
+    # this is for ansible
     - name: Pre-req - ansible
       run: pip3 install ansible
 
