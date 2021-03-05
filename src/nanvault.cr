@@ -4,7 +4,7 @@ require "yaml"
 
 # `Nanvault` module
 module Nanvault
-  VERSION = "0.2.2"
+  VERSION = "0.2.3"
 
   # Encrypted data class
   class Encrypted
