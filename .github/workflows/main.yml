@@ -30,6 +30,8 @@ jobs:
       run: apk add libffi-dev
     - name: Pre-req - python3-dev
       run: apk add python3-dev
+    - name: Pre-req - rust cargo # this is for pyca/cryptography Ansible dep
+      run: apk add rust cargo
     - name: Pre-req - ansible
       run: pip3 install ansible
 
