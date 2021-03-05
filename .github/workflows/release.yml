@@ -90,6 +90,10 @@ jobs:
       run: |
         chmod +x ./nanvault-linux/nanvault
         chmod +x ./nanvault-darwin/nanvault
+        chown root ./nanvault-linux/nanvault
+        chown root ./nanvault-darwin/nanvault
+        chgrp root ./nanvault-linux/nanvault
+        chgrp root ./nanvault-darwin/nanvault
         tar -czf nanvault-${{ steps.get_version.outputs.VERSION }}-linux-amd64.tar.gz -C ./nanvault-linux .
         tar -czf nanvault-${{ steps.get_version.outputs.VERSION }}-darwin-amd64.tar.gz -C ./nanvault-darwin .
 
