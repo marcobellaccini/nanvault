@@ -1,4 +1,5 @@
 name: nanvault tests
+run-name: nanvault tests
 
 on:
   push:
