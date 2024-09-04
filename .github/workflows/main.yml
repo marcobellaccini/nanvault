@@ -25,14 +25,16 @@ jobs:
       run: apk add bash
     - name: Pre-req - pip
       run: apk add py3-pip
-    - name: Pre-req - upgrade pip
-      run: pip3 install --upgrade pip
     - name: Pre-req - libffi-dev
       run: apk add libffi-dev
     - name: Pre-req - python3-dev
       run: apk add python3-dev
     - name: Pre-req - rust cargo # this is for pyca/cryptography Ansible dep
       run: apk add rust cargo
+    - name: Pre-req - create and activate venv
+      run: mkdir /venvtest && python3 -m venv /venvtest && . /venvtest/bin/activate
+    - name: Pre-req - upgrade pip
+      run: pip3 install --upgrade pip
     - name: Pre-req - ansible
       run: pip3 install ansible
 
@@ -59,10 +61,12 @@ jobs:
       run: brew update
     - name: Install Crystal
       run: brew install crystal
+    - name: Install pipx
+      run: brew install pipx
 
     # this is for ansible
     - name: Pre-req - ansible
-      run: pip3 install ansible
+      run: pipx install ansible
 
     # nanvault tests
     - name: Install dependencies
