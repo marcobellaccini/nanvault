@@ -34,9 +34,9 @@ jobs:
     - name: Pre-req - create and activate venv
       run: mkdir /venvtest && python3 -m venv /venvtest && . /venvtest/bin/activate
     - name: Pre-req - upgrade pip
-      run: pip3 install --upgrade pip
+      run: . /venvtest/bin/activate && pip3 install --upgrade pip
     - name: Pre-req - ansible
-      run: pip3 install ansible
+      run: . /venvtest/bin/activate && pip3 install ansible
 
     # nanvault tests
     - name: Install dependencies
