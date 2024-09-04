@@ -77,11 +77,11 @@ jobs:
     
     # get artifacts containing the builds
     - name: Download nanvault-linux
-      uses: actions/download-artifact@v1
+      uses: actions/download-artifact@v4
       with:
         name: nanvault-linux
     - name: Download nanvault-darwin
-      uses: actions/download-artifact@v1
+      uses: actions/download-artifact@v4
       with:
         name: nanvault-darwin
 
