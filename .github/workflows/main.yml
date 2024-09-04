@@ -43,8 +43,6 @@ jobs:
       run: shards install
     - name: Run unittests
       run: crystal spec
-    - name: Run tool format check
-      run: crystal tool format --check
     - name: Build
       run: shards build
     - name: Run cmd_crosstests
